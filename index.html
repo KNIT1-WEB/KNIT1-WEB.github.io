@@ -37,14 +37,231 @@
       background: #5a5a5a;
     }
   </style>
-</head>
-<body>
-  <div class="box">
-    <h1>APLICACIONES WEB</h1>
-    <p>Selecciona una aplicación:</p>
+<style>
+* {
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
 
-    <a href="efectivo/index.html">Efectivo</a>
-  </div>
-</body>
-</html>
+/* FONDO GENERAL */
+body {
+  margin: 0;
+  padding: 1rem;
+  background: #e6e6e6;
+  color: #1a1a1a;
+}
+
+/* CONTENEDOR PRINCIPAL */
+.app-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  background: #ffffff;
+  padding: 1.5rem;
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+
+/* TITULOS */
+h1 {
+  margin: 0 0 0.3rem;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+.subtitle {
+  color: #555;
+  font-size: 0.95rem;
+  margin-bottom: 1.2rem;
+}
+
+/* USUARIO */
+.user-info {
+  margin-bottom: 1.2rem;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+/* BOTONES */
+button {
+  border: none;
+  border-radius: 8px;
+  padding: 0.65rem 1rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: 0.2s ease;
+}
+
+.btn-primary {
+  background: #1a1a1a;
+  color: #fff;
+}
+.btn-primary:hover {
+  background: #000;
+}
+
+.btn-secondary {
+  background: #555;
+  color: #fff;
+}
+.btn-danger {
+  background: #c62828;
+  color: #fff;
+}
+.btn-danger:hover {
+  background: #a50f0f;
+}
+
+/* FORMULARIO GENERAL */
+form {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0,1fr));
+  gap: 1rem;
+  align-items: end;
+  margin-bottom: 1.6rem;
+}
+
+/* CAMPOS */
+label {
+  font-size: 0.85rem;
+  margin-bottom: 0.3rem;
+  display: block;
+  font-weight: 600;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 0.55rem;
+  border-radius: 8px;
+  border: 1px solid #bbb;
+  background: #fff;
+  font-size: 0.92rem;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 42px;
+}
+
+/* FILTROS — PANEL PLEGABLE EN MÓVIL */
+.filtros-wrapper {
+  margin-bottom: 1rem;
+}
+
+#btnMostrarFiltros {
+  display: none; /* Se muestra solo en móvil */
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 700px) {
+  #btnMostrarFiltros {
+    display: block;
+  }
+  #filtrosPanel {
+    display: none;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    padding: 1rem;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+  }
+}
+
+/* TABLA */
+.table-wrapper {
+  margin-top: 1.2rem;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+th, td {
+  padding: 0.65rem;
+  border-bottom: 1px solid #eee;
+  font-size: 0.9rem;
+}
+
+th {
+  background: #f2f2f2;
+  font-weight: 600;
+}
+
+tr:nth-child(even) {
+  background: #fafafa;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.estado-si { color: #0a7d0a; font-weight: 700; }
+.estado-no { color: #c62828; font-weight: 700; }
+
+/* LOGIN */
+#loginOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+#loginBox {
+  width: 90%;
+  max-width: 340px;
+  background: white;
+  padding: 1.4rem;
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+}
+
+#loginBox input {
+  width: 100%;
+  margin-top: 0.5rem;
+  margin-bottom: 0.9rem;
+  padding: 0.55rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+}
+
+#loginError {
+  display: none;
+  color: #c62828;
+  font-size: 0.85rem;
+  margin-bottom: .6rem;
+}
+
+/* MENSAJE SIN DATOS */
+#mensajeSinDatos {
+  font-size: 1rem;
+  color: #777;
+  margin-top: 1rem;
+  text-align: center;
+}
+
+/* RESPONSIVE FORMULARIO — COLUMNA */
+@media (max-width: 900px) {
+  form {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  form {
+    grid-template-columns: 1fr;
+  }
+  button {
+    width: 100%;
+  }
+}
+</style>
+
 
