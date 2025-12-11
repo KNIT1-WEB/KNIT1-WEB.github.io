@@ -1,267 +1,258 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <title>APLICACIONES WEB</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    body {
-      margin: 0;
-      background: #2b2b2b;
-      color: white;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      font-family: Arial, sans-serif;
-    }
-    .box {
-      background: #3a3a3a;
-      padding: 2rem;
-      border-radius: 12px;
-      text-align: center;
-      width: 90%;
-      max-width: 500px;
-    }
-    a {
-      display: block;
-      background: #4a4a4a;
-      padding: 1rem;
-      border-radius: 8px;
-      margin-top: 1rem;
-      color: white;
-      text-decoration: none;
-      font-weight: bold;
-    }
-    a:hover {
-      background: #5a5a5a;
-    }
-  </style>
-<style>
-* {
-  box-sizing: border-box;
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-}
+<script>
+/* ================================
+   USUARIOS PERMITIDOS
+================================ */
+const usuarios = [
+  { usuario: "admin", pass: "1234" },
+  { usuario: "tienda1", pass: "1111" },
+  { usuario: "tienda2", pass: "2222" },
+  { usuario: "tienda3", pass: "3333" }
+];
 
-/* FONDO GENERAL */
-body {
-  margin: 0;
-  padding: 1rem;
-  background: #e6e6e6;
-  color: #1a1a1a;
-}
+/* Carga datos guardados */
+let cobros = JSON.parse(localStorage.getItem("cobros_efectivo") || "[]");
 
-/* CONTENEDOR PRINCIPAL */
-.app-container {
-  max-width: 1100px;
-  margin: 0 auto;
-  background: #ffffff;
-  padding: 1.5rem;
-  border-radius: 14px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-}
+/* Usuario actual */
+let usuarioActual = null;
 
-/* TITULOS */
-h1 {
-  margin: 0 0 0.3rem;
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #1a1a1a;
-}
-.subtitle {
-  color: #555;
-  font-size: 0.95rem;
-  margin-bottom: 1.2rem;
-}
+/* ================================
+   LOGIN
+================================ */
+const loginOverlay = document.getElementById("loginOverlay");
+const btnLogin = document.getElementById("btnLogin");
 
-/* USUARIO */
-.user-info {
-  margin-bottom: 1.2rem;
-  font-size: 0.9rem;
-  color: #333;
-}
+btnLogin.addEventListener("click", () => {
+  const user = document.getElementById("loginUser").value.trim();
+  const pass = document.getElementById("loginPass").value.trim();
 
-/* BOTONES */
-button {
-  border: none;
-  border-radius: 8px;
-  padding: 0.65rem 1rem;
-  cursor: pointer;
-  font-size: 0.95rem;
-  transition: 0.2s ease;
-}
+  const encontrado = usuarios.find(u => u.usuario === user && u.pass === pass);
 
-.btn-primary {
-  background: #1a1a1a;
-  color: #fff;
-}
-.btn-primary:hover {
-  background: #000;
-}
-
-.btn-secondary {
-  background: #555;
-  color: #fff;
-}
-.btn-danger {
-  background: #c62828;
-  color: #fff;
-}
-.btn-danger:hover {
-  background: #a50f0f;
-}
-
-/* FORMULARIO GENERAL */
-form {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0,1fr));
-  gap: 1rem;
-  align-items: end;
-  margin-bottom: 1.6rem;
-}
-
-/* CAMPOS */
-label {
-  font-size: 0.85rem;
-  margin-bottom: 0.3rem;
-  display: block;
-  font-weight: 600;
-}
-
-input, select, textarea {
-  width: 100%;
-  padding: 0.55rem;
-  border-radius: 8px;
-  border: 1px solid #bbb;
-  background: #fff;
-  font-size: 0.92rem;
-}
-
-textarea {
-  resize: vertical;
-  min-height: 42px;
-}
-
-/* FILTROS — PANEL PLEGABLE EN MÓVIL */
-.filtros-wrapper {
-  margin-bottom: 1rem;
-}
-
-#btnMostrarFiltros {
-  display: none; /* Se muestra solo en móvil */
-  margin-bottom: 1rem;
-}
-
-@media (max-width: 700px) {
-  #btnMostrarFiltros {
-    display: block;
+  if (!encontrado) {
+    document.getElementById("loginError").style.display = "block";
+    return;
   }
-  #filtrosPanel {
-    display: none;
-    background: #f9f9f9;
-    border: 1px solid #ddd;
-    padding: 1rem;
-    border-radius: 10px;
-    margin-bottom: 1rem;
+
+  usuarioActual = user;
+  document.getElementById("usuarioActual").textContent = usuarioActual;
+
+  loginOverlay.style.display = "none";
+  actualizarSelectsUsuarios();
+  renderTabla();
+});
+
+/* LOGOUT */
+document.getElementById("btnLogout").addEventListener("click", () => {
+  usuarioActual = null;
+  loginOverlay.style.display = "flex";
+});
+
+/* ================================
+   CÁLCULO AUTOMÁTICO DIFERENCIA
+================================ */
+function calcularDiferencia() {
+  const esperado = parseFloat(document.getElementById("importeCobro").value) || 0;
+  const recibido = parseFloat(document.getElementById("importeRecibido").value) || 0;
+  const dif = recibido - esperado;
+
+  const campo = document.getElementById("importeDiferencia");
+  campo.value = dif.toFixed(2);
+
+  if (dif === 0) {
+    campo.style.color = "#0a7d0a"; // verde
+  } else {
+    campo.style.color = "#c62828"; // rojo
   }
 }
 
-/* TABLA */
-.table-wrapper {
-  margin-top: 1.2rem;
-  overflow-x: auto;
-}
+document.getElementById("importeCobro").addEventListener("input", calcularDiferencia);
+document.getElementById("importeRecibido").addEventListener("input", calcularDiferencia);
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: #fff;
-  border-radius: 10px;
-  overflow: hidden;
-}
+/* ================================
+   FORMULARIO AÑADIR COBRO
+================================ */
+document.getElementById("formCobro").addEventListener("submit", (e) => {
+  e.preventDefault();
 
-th, td {
-  padding: 0.65rem;
-  border-bottom: 1px solid #eee;
-  font-size: 0.9rem;
-}
+  const fecha = document.getElementById("fechaCobro").value;
+  const esperado = parseFloat(document.getElementById("importeCobro").value);
+  const recibido = parseFloat(document.getElementById("importeRecibido").value) || 0;
+  const diferencia = recibido - esperado;
+  const nota = document.getElementById("notaCobro").value.trim();
+  const recibidoSN = document.getElementById("recibidoCobro").value;
+  const cobra = document.getElementById("cobraCobro").value;
 
-th {
-  background: #f2f2f2;
-  font-weight: 600;
-}
-
-tr:nth-child(even) {
-  background: #fafafa;
-}
-
-.text-right {
-  text-align: right;
-}
-
-.estado-si { color: #0a7d0a; font-weight: 700; }
-.estado-no { color: #c62828; font-weight: 700; }
-
-/* LOGIN */
-#loginOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.45);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
-}
-
-#loginBox {
-  width: 90%;
-  max-width: 340px;
-  background: white;
-  padding: 1.4rem;
-  border-radius: 14px;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.3);
-}
-
-#loginBox input {
-  width: 100%;
-  margin-top: 0.5rem;
-  margin-bottom: 0.9rem;
-  padding: 0.55rem;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  font-size: 1rem;
-}
-
-#loginError {
-  display: none;
-  color: #c62828;
-  font-size: 0.85rem;
-  margin-bottom: .6rem;
-}
-
-/* MENSAJE SIN DATOS */
-#mensajeSinDatos {
-  font-size: 1rem;
-  color: #777;
-  margin-top: 1rem;
-  text-align: center;
-}
-
-/* RESPONSIVE FORMULARIO — COLUMNA */
-@media (max-width: 900px) {
-  form {
-    grid-template-columns: 1fr 1fr;
+  if (!fecha || isNaN(esperado)) {
+    alert("Faltan datos obligatorios.");
+    return;
   }
+
+  cobros.push({
+    fecha,
+    esperado,
+    recibido,
+    diferencia,
+    nota,
+    recibidoSN,
+    creadoPor: usuarioActual,
+    cobra
+  });
+
+  guardarDatos();
+  renderTabla();
+
+  document.getElementById("formCobro").reset();
+  document.getElementById("importeDiferencia").value = "";
+});
+
+/* ================================
+   ACTUALIZAR SELECT USUARIOS
+================================ */
+function actualizarSelectsUsuarios() {
+  const cobraSelect = document.getElementById("cobraCobro");
+  const filtroCreador = document.getElementById("filtroCreador");
+  const filtroCobrador = document.getElementById("filtroCobrador");
+
+  cobraSelect.innerHTML = "";
+  filtroCreador.innerHTML = "<option value='todos'>Todos</option>";
+  filtroCobrador.innerHTML = "<option value='todos'>Todos</option>";
+
+  usuarios.forEach(u => {
+    cobraSelect.innerHTML += `<option value="${u.usuario}">${u.usuario}</option>`;
+    filtroCreador.innerHTML += `<option value="${u.usuario}">${u.usuario}</option>`;
+    filtroCobrador.innerHTML += `<option value="${u.usuario}">${u.usuario}</option>`;
+  });
 }
 
-@media (max-width: 700px) {
-  form {
-    grid-template-columns: 1fr;
+/* ================================
+   TABLA
+================================ */
+const tbody = document.getElementById("tbodyCobros");
+
+function renderTabla() {
+  tbody.innerHTML = "";
+
+  let lista = filtrarDatos(cobros);
+
+  /* Ordenar FECHA DESCENDENTE */
+  lista.sort((a, b) => b.fecha.localeCompare(a.fecha));
+
+  if (lista.length === 0) {
+    document.getElementById("mensajeSinDatos").style.display = "block";
+    actualizarResumen(lista);
+    return;
   }
-  button {
-    width: 100%;
-  }
+
+  document.getElementById("mensajeSinDatos").style.display = "none";
+
+  lista.forEach((c, index) => {
+    const tr = document.createElement("tr");
+
+    const dia = new Date(c.fecha).toLocaleDateString("es-es", { weekday: "long" });
+
+    tr.innerHTML = `
+      <td>${c.fecha}</td>
+      <td>${dia}</td>
+      <td class="text-right">${c.esperado.toFixed(2)}</td>
+      <td class="text-right">${c.recibido.toFixed(2)}</td>
+      <td class="text-right" style="font-weight:bold; color:${c.diferencia === 0 ? "#0a7d0a" : "#c62828"};">
+        ${c.diferencia.toFixed(2)}
+      </td>
+      <td>${c.nota}</td>
+      <td>${c.recibidoSN}</td>
+      <td>${c.creadoPor}</td>
+      <td>${c.cobra}</td>
+      <td><button class="btn-danger" onclick="borrar(${index})">X</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  actualizarResumen(lista);
 }
-</style>
 
+/* ================================
+   BORRAR REGISTRO
+================================ */
+function borrar(index) {
+  if (!confirm("¿Seguro que quieres borrar este movimiento?")) return;
+  cobros.splice(index, 1);
+  guardarDatos();
+  renderTabla();
+}
 
+/* ================================
+   GUARDAR
+================================ */
+function guardarDatos() {
+  localStorage.setItem("cobros_efectivo", JSON.stringify(cobros));
+}
+
+/* ================================
+   FILTROS
+================================ */
+document.querySelectorAll("#filtroNota, #filtroFechaDesde, #filtroFechaHasta, #filtroRecibido, #filtroCreador, #filtroCobrador")
+  .forEach(elem => elem.addEventListener("input", renderTabla));
+
+document.getElementById("btnLimpiarFiltros").addEventListener("click", () => {
+  document.getElementById("filtroNota").value = "";
+  document.getElementById("filtroFechaDesde").value = "";
+  document.getElementById("filtroFechaHasta").value = "";
+  document.getElementById("filtroRecibido").value = "todos";
+  document.getElementById("filtroCreador").value = "todos";
+  document.getElementById("filtroCobrador").value = "todos";
+  renderTabla();
+});
+
+/* ================================
+   FILTRAR
+================================ */
+function filtrarDatos(lista) {
+  const fNota = document.getElementById("filtroNota").value.toLowerCase();
+  const fDesde = document.getElementById("filtroFechaDesde").value;
+  const fHasta = document.getElementById("filtroFechaHasta").value;
+  const fRecibido = document.getElementById("filtroRecibido").value;
+  const fCreador = document.getElementById("filtroCreador").value;
+  const fCobrador = document.getElementById("filtroCobrador").value;
+
+  return lista.filter(c => {
+    if (fNota && !c.nota.toLowerCase().includes(fNota)) return false;
+    if (fDesde && c.fecha < fDesde) return false;
+    if (fHasta && c.fecha > fHasta) return false;
+    if (fRecibido === "recibidos" && c.recibidoSN !== "Sí") return false;
+    if (fRecibido === "pendientes" && c.recibidoSN !== "No") return false;
+    if (fCreador !== "todos" && c.creadoPor !== fCreador) return false;
+    if (fCobrador !== "todos" && c.cobra !== fCobrador) return false;
+    return true;
+  });
+}
+
+/* ================================
+   RESUMEN
+================================ */
+function actualizarResumen(lista) {
+  const total = lista.reduce((s, c) => s + c.esperado, 0);
+  document.getElementById("resumenCobros").textContent =
+    `${lista.length} movimientos · Total: ${total.toFixed(2)} €`;
+}
+
+/* ================================
+   EXPORTAR CSV
+================================ */
+document.getElementById("btnExportar").addEventListener("click", () => {
+  let csv = "Fecha,Día,Importe esperado,Importe recibido,Diferencia,Tienda,Recibido,Creado por,Cobra\n";
+
+  cobros.forEach(c => {
+    const dia = new Date(c.fecha).toLocaleDateString("es-es", { weekday: "long" });
+    csv += `${c.fecha},${dia},${c.esperado.toFixed(2)},${c.recibido.toFixed(2)},${c.diferencia.toFixed(2)},"${c.nota}",${c.recibidoSN},${c.creadoPor},${c.cobra}\n`;
+  });
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "cobros.csv";
+  a.click();
+
+  URL.revokeObjectURL(url);
+});
+</script>
