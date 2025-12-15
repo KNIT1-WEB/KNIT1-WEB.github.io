@@ -1,229 +1,331 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Efectivo</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>Efectivo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
-    * {
-      box-sizing: border-box;
-      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-    }
+<style>
+* {
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
 
-    body {
-      margin: 0;
-      padding: 1rem;
-      background: #e6e6e6;
-      color: #1a1a1a;
-    }
+body {
+  margin: 0;
+  padding: 1rem;
+  background: #e6e6e6;
+  color: #1a1a1a;
+}
 
-    .app-container {
-      max-width: 1200px;
-      margin: auto;
-      background: #fff;
-      padding: 1.5rem;
-      border-radius: 14px;
-      box-shadow: 0 4px 16px rgba(0,0,0,.15);
-    }
+.app {
+  max-width: 1200px;
+  margin: auto;
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.15);
+}
 
-    h1 {
-      margin: 0 0 .5rem;
-    }
+h1 { margin: 0 0 .3rem; }
+.sub { color:#555; margin-bottom:1rem; }
 
-    form {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-      align-items: end;
-    }
+/* LOGIN */
+#login {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
 
-    label {
-      font-size: .85rem;
-      font-weight: 600;
-      display: block;
-      margin-bottom: .3rem;
-    }
+.login-box {
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 320px;
+}
 
-    input, select {
-      width: 100%;
-      padding: .55rem;
-      border-radius: 8px;
-      border: 1px solid #bbb;
-      font-size: .9rem;
-    }
+.login-box h2 { margin-top:0; }
+.login-box input {
+  width: 100%;
+  margin-bottom: .7rem;
+  padding: .55rem;
+  border-radius: 8px;
+  border: 1px solid #bbb;
+}
 
-    button {
-      border: none;
-      padding: .7rem;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      background: #1a1a1a;
-      color: #fff;
-    }
+/* FORM */
+form {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+  align-items: end;
+}
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-    }
+label {
+  font-size: .85rem;
+  font-weight: 600;
+  margin-bottom: .25rem;
+  display: block;
+}
 
-    th, td {
-      padding: .6rem;
-      border-bottom: 1px solid #ddd;
-      font-size: .9rem;
-    }
+input, select {
+  width: 100%;
+  padding: .55rem;
+  border-radius: 8px;
+  border: 1px solid #bbb;
+}
 
-    th {
-      background: #f2f2f2;
-    }
+button {
+  border: none;
+  border-radius: 8px;
+  padding: .65rem;
+  background: #1a1a1a;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+}
 
-    tr:nth-child(even) {
-      background: #fafafa;
-    }
+button.sec { background:#555; }
+button.danger { background:#c62828; }
 
-    .text-right {
-      text-align: right;
-    }
+.text-right { text-align:right; }
+.neg { color:#c62828; font-weight:700; }
+.ok { color:#0a7d0a; font-weight:700; }
 
-    .negativo {
-      color: #c62828;
-      font-weight: 700;
-    }
+/* FILTROS */
+.filtros {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: .8rem;
+  margin-bottom: 1rem;
+  font-size:.85rem;
+}
 
-    .positivo {
-      color: #0a7d0a;
-      font-weight: 700;
-    }
+/* TABLA */
+.table-wrap {
+  overflow-x: auto;
+}
 
-    @media (max-width: 900px) {
-      form {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: .6rem;
+  border-bottom: 1px solid #ddd;
+  font-size:.9rem;
+}
+
+th { background:#f2f2f2; }
+
+tr:nth-child(even) { background:#fafafa; }
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  form { grid-template-columns: 1fr 1fr; }
+  .filtros { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 600px) {
+  form, .filtros { grid-template-columns: 1fr; }
+}
+</style>
 </head>
 
 <body>
-<div class="app-container">
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="login-box">
+    <h2>Acceso</h2>
+    <input id="user" placeholder="Usuario">
+    <input id="pass" type="password" placeholder="Contraseña">
+    <button onclick="login()">Entrar</button>
+    <p id="err" style="color:#c62828;display:none;">Datos incorrectos</p>
+  </div>
+</div>
+
+<div class="app">
   <h1>Efectivo</h1>
+  <div class="sub">Control de cobros por tienda</div>
+
+  <div style="margin-bottom:1rem;">
+    Usuario: <strong id="usuario"></strong>
+    <button class="sec" onclick="logout()">Cambiar usuario</button>
+  </div>
 
   <!-- FORMULARIO -->
-  <form id="formCobro">
+  <form id="form">
     <div>
       <label>Fecha</label>
       <input type="date" id="fecha" required>
     </div>
-
     <div>
       <label>Tienda</label>
-      <input type="text" id="tienda" required>
+      <input id="tienda" required>
     </div>
-
     <div>
-      <label>Importe esperado (€)</label>
-      <input type="number" id="importeEsperado" step="0.01" required>
+      <label>Importe esperado</label>
+      <input type="number" step="0.01" id="esperado" required>
     </div>
-
     <div>
-      <label>Importe recibido (€)</label>
-      <input type="number" id="importeRecibido" step="0.01" required>
+      <label>Importe recibido</label>
+      <input type="number" step="0.01" id="recibido" required>
     </div>
-
+    <div>
+      <label>Diferencia</label>
+      <input id="dif" readonly>
+    </div>
     <div>
       <label>Recibido</label>
-      <select id="recibido">
+      <select id="estado">
         <option>Sí</option>
         <option>No</option>
       </select>
     </div>
-
     <div>
-      <label>&nbsp;</label>
       <button>Añadir</button>
     </div>
   </form>
 
+  <!-- FILTROS -->
+  <div class="filtros">
+    <input id="fTienda" placeholder="Filtrar tienda">
+    <input type="date" id="fDesde">
+    <input type="date" id="fHasta">
+    <select id="fEstado">
+      <option value="">Todos</option>
+      <option>Sí</option>
+      <option>No</option>
+    </select>
+    <button class="sec" onclick="limpiarFiltros()">Quitar filtros</button>
+  </div>
+
   <!-- TABLA -->
-  <table>
-    <thead>
-      <tr>
-        <th>Fecha</th>
-        <th>Tienda</th>
-        <th class="text-right">Esperado</th>
-        <th class="text-right">Recibido</th>
-        <th class="text-right">Diferencia</th>
-        <th>Estado</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody id="tabla"></tbody>
-  </table>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Tienda</th>
+          <th class="text-right">Esperado</th>
+          <th class="text-right">Recibido</th>
+          <th class="text-right">Diferencia</th>
+          <th>Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tabla"></tbody>
+    </table>
+  </div>
 </div>
 
 <script>
-  let datos = JSON.parse(localStorage.getItem("efectivo") || "[]");
+const usuarios = [
+  {u:"admin", p:"1234"},
+  {u:"tienda1", p:"1111"},
+  {u:"tienda2", p:"2222"}
+];
 
-  const form = document.getElementById("formCobro");
-  const tabla = document.getElementById("tabla");
+let usuario = null;
+let datos = JSON.parse(localStorage.getItem("efectivo")||"[]");
 
-  form.addEventListener("submit", e => {
-    e.preventDefault();
+function login(){
+  const u = user.value.trim();
+  const p = pass.value.trim();
+  const ok = usuarios.find(x=>x.u===u && x.p===p);
+  if(!ok){ err.style.display="block"; return; }
+  usuario = u;
+  loginDiv(false);
+}
 
-    const esperado = parseFloat(importeEsperado.value);
-    const recibido = parseFloat(importeRecibido.value);
-    const diferencia = recibido - esperado;
+function logout(){
+  usuario=null;
+  loginDiv(true);
+}
 
-    datos.push({
-      fecha: fecha.value,
-      tienda: tienda.value,
-      esperado,
-      recibido,
-      diferencia,
-      estado: recibido === esperado ? "OK" : "Revisar"
-    });
+function loginDiv(show){
+  document.getElementById("login").style.display = show?"flex":"none";
+  document.getElementById("usuario").textContent = usuario||"";
+}
 
-    guardar();
-    form.reset();
+function calc(){
+  const d = (parseFloat(recibido.value)||0)-(parseFloat(esperado.value)||0);
+  dif.value = d.toFixed(2);
+  dif.className = d===0?"ok":"neg";
+}
+esperado.oninput = recibido.oninput = calc;
+
+form.onsubmit = e=>{
+  e.preventDefault();
+  datos.push({
+    fecha:fecha.value,
+    tienda:tienda.value,
+    esperado:+esperado.value,
+    recibido:+recibido.value,
+    dif:+dif.value,
+    estado:estado.value,
+    usuario
   });
+  guardar();
+  form.reset(); dif.value="";
+};
 
-  function guardar() {
-    localStorage.setItem("efectivo", JSON.stringify(datos));
-    render();
-  }
+function guardar(){
+  localStorage.setItem("efectivo",JSON.stringify(datos));
+  render();
+}
 
-  function render() {
-    tabla.innerHTML = "";
+function render(){
+  tabla.innerHTML="";
+  datos
+    .filter(filtrar)
+    .sort((a,b)=>b.fecha.localeCompare(a.fecha))
+    .forEach((d,i)=>{
+      tabla.innerHTML+=`
+      <tr>
+        <td>${d.fecha}</td>
+        <td>${d.tienda}</td>
+        <td class="text-right">${d.esperado.toFixed(2)}</td>
+        <td class="text-right">${d.recibido.toFixed(2)}</td>
+        <td class="text-right ${d.dif===0?"ok":"neg"}">${d.dif.toFixed(2)}</td>
+        <td>${d.estado}</td>
+        <td><button class="danger" onclick="del(${i})">X</button></td>
+      </tr>`;
+    });
+}
 
-    datos
-      .sort((a, b) => b.fecha.localeCompare(a.fecha))
-      .forEach((d, i) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${d.fecha}</td>
-          <td>${d.tienda}</td>
-          <td class="text-right">${d.esperado.toFixed(2)}</td>
-          <td class="text-right">${d.recibido.toFixed(2)}</td>
-          <td class="text-right ${d.diferencia !== 0 ? "negativo" : "positivo"}">
-            ${d.diferencia.toFixed(2)}
-          </td>
-          <td>${d.estado}</td>
-          <td><button onclick="borrar(${i})">✕</button></td>
-        `;
-        tabla.appendChild(tr);
-      });
-  }
-
-  function borrar(i) {
-    if (!confirm("¿Borrar este registro?")) return;
-    datos.splice(i, 1);
+function del(i){
+  if(confirm("¿Borrar?")){
+    datos.splice(i,1);
     guardar();
   }
+}
 
+function filtrar(d){
+  if(fTienda.value && !d.tienda.toLowerCase().includes(fTienda.value.toLowerCase())) return false;
+  if(fEstado.value && d.estado!==fEstado.value) return false;
+  if(fDesde.value && d.fecha<fDesde.value) return false;
+  if(fHasta.value && d.fecha>fHasta.value) return false;
+  return true;
+}
+
+function limpiarFiltros(){
+  fTienda.value=fDesde.value=fHasta.value="";
+  fEstado.value="";
   render();
+}
+
+loginDiv(true);
+render();
 </script>
+
 </body>
 </html>
-
