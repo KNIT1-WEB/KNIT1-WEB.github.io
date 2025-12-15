@@ -3,222 +3,201 @@
 <head>
 <meta charset="UTF-8">
 <title>Efectivo</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<link rel="manifest" href="/efectivo/manifest.webmanifest">
-<meta name="theme-color" content="#000000">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 *{box-sizing:border-box;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
-body{margin:0;background:#e6e6e6;padding:1rem}
-.app{max-width:1200px;margin:auto;background:#fff;border-radius:14px;padding:1.5rem;box-shadow:0 4px 16px rgba(0,0,0,.15)}
+body{margin:0;padding:1rem;background:#e6e6e6}
+.app{max-width:1200px;margin:auto;background:#fff;padding:1.5rem;border-radius:14px;box-shadow:0 4px 16px rgba(0,0,0,.12)}
 h1{margin:0}
-.subtitle{color:#555;margin-bottom:1rem}
-button{border:none;border-radius:8px;padding:.6rem 1rem;cursor:pointer}
-.btn{background:#111;color:#fff}
-.btn-danger{background:#c62828;color:#fff}
-.btn-sec{background:#666;color:#fff}
-input,select,textarea{width:100%;padding:.5rem;border-radius:8px;border:1px solid #bbb}
-label{font-size:.8rem;font-weight:600}
-.form-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:1rem;margin-bottom:1.5rem}
-.filters{margin:2rem 0 1.5rem 0;padding:1rem;border-radius:12px;background:#f4f4f4}
-.filters-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:1rem}
-.table-wrap{margin-top:2rem;overflow-x:auto}
-table{width:100%;border-collapse:collapse}
-th,td{padding:.6rem;border-bottom:1px solid #eee;font-size:.9rem}
+.sub{color:#555;margin-bottom:1rem}
+
+.row{display:grid;grid-template-columns:repeat(6,1fr);gap:1rem;align-items:end}
+.filters{margin:2rem 0;padding:1rem;background:#f4f4f4;border-radius:10px}
+input,select,textarea,button{padding:.55rem;border-radius:8px;border:1px solid #bbb;font-size:.95rem}
+textarea{resize:vertical}
+button{cursor:pointer}
+.btn{background:#111;color:#fff;border:none}
+.btn-gray{background:#666;color:#fff;border:none}
+
+table{width:100%;border-collapse:collapse;margin-top:1rem}
+th,td{padding:.6rem;border-bottom:1px solid #eee;text-align:left}
 th{background:#f0f0f0}
 tr:nth-child(even){background:#fafafa}
-.text-right{text-align:right}
-.diff{color:#c62828;font-weight:700}
-.ok{color:#0a7d0a;font-weight:700}
-.login{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000}
-.login-box{background:#fff;padding:1.5rem;border-radius:14px;width:90%;max-width:340px}
-.login-box input{margin-bottom:.7rem}
-@media(max-width:900px){
-.form-grid,.filters-grid{grid-template-columns:1fr 1fr}
-}
-@media(max-width:600px){
-.form-grid,.filters-grid{grid-template-columns:1fr}
-}
+
+.red{color:#c62828;font-weight:700}
+.green{color:#0a7d0a;font-weight:700}
+
+#login{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:10}
+#loginBox{background:#fff;padding:1.4rem;border-radius:14px;width:320px}
+#loginBox input{width:100%;margin:.5rem 0}
+#error{color:#c62828;font-size:.9rem;display:none}
+
+@media(max-width:900px){.row{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.row{grid-template-columns:1fr}}
 </style>
 </head>
 
 <body>
 
 <!-- LOGIN -->
-<div id="login" class="login">
-  <div class="login-box">
-    <h2>Acceso</h2>
-    <div id="loginError" style="color:#c62828;display:none">Credenciales incorrectas</div>
-    <input id="user" placeholder="Usuario">
-    <input id="pass" type="password" placeholder="Contraseña">
+<div id="login">
+  <div id="loginBox">
+    <h3>Acceso</h3>
+    <div id="error">Usuario o contraseña incorrectos</div>
+    <input id="u" placeholder="Usuario">
+    <input id="p" type="password" placeholder="Contraseña">
     <button class="btn" onclick="login()">Entrar</button>
   </div>
 </div>
 
 <div class="app">
-<h1>Efectivo</h1>
-<p class="subtitle">Registro de cobros por tienda</p>
+  <h1>Efectivo</h1>
+  <div class="sub">Registro de cobros por tienda</div>
 
-<p>Usuario actual: <b id="currentUser"></b>
-<button class="btn-sec" onclick="logout()">Cambiar</button></p>
+  <div>
+    Usuario actual: <b id="userTxt"></b>
+    <button class="btn-gray" onclick="logout()">Cambiar</button>
+  </div>
 
-<!-- FORMULARIO -->
-<form onsubmit="add(event)">
-<div class="form-grid">
-<div><label>Fecha</label><input type="date" id="fFecha" required></div>
-<div><label>Importe anotado</label><input type="number" step="0.01" id="fImporte" required></div>
-<div><label>Tienda</label><textarea id="fTienda"></textarea></div>
-<div><label>Recibido</label>
-<select id="fRecibido"><option>No</option><option>Sí</option></select>
-</div>
-<div><label>Importe recibido</label><input type="number" step="0.01" id="fImporteReal"></div>
-<div><button class="btn">Añadir</button></div>
-</div>
-</form>
+  <!-- ALTA -->
+  <div class="row" style="margin-top:1rem">
+    <div><label>Fecha</label><input type="date" id="fFecha"></div>
+    <div><label>Importe anotado</label><input type="number" id="fImp"></div>
+    <div><label>Tienda</label><textarea id="fTienda"></textarea></div>
+    <div><label>Recibido</label>
+      <select id="fRec">
+        <option>No</option><option>Sí</option>
+      </select>
+    </div>
+    <div><label>Importe recibido</label><input type="number" id="fReal"></div>
+    <div><button class="btn" onclick="add()">Añadir</button></div>
+  </div>
 
-<!-- FILTROS -->
-<div class="filters">
-<div class="filters-grid">
-<div><label>Tienda</label><input id="fFilTienda"></div>
-<div><label>Desde</label><input type="date" id="fDesde"></div>
-<div><label>Hasta</label><input type="date" id="fHasta"></div>
-<div><label>Recibido</label>
-<select id="fFilRec">
-<option value="">Todos</option><option>Sí</option><option>No</option>
-</select></div>
-<div><label>Creador</label><select id="fFilUser"></select></div>
-<div>
-<button class="btn-sec" onclick="clearFilters()">Quitar filtros</button>
-</div>
-</div>
-</div>
+  <!-- FILTROS -->
+  <div class="filters row">
+    <div><label>Tienda</label><input id="ftTienda"></div>
+    <div><label>Desde</label><input type="date" id="ftDesde"></div>
+    <div><label>Hasta</label><input type="date" id="ftHasta"></div>
+    <div><label>Recibido</label>
+      <select id="ftRec">
+        <option value="">Todos</option>
+        <option>Sí</option><option>No</option>
+      </select>
+    </div>
+    <div><label>Creador</label>
+      <select id="ftUser"></select>
+    </div>
+    <div><button class="btn-gray" onclick="clearFilters()">Quitar filtros</button></div>
+  </div>
 
-<p id="resumen"></p>
+  <div id="resumen"></div>
 
-<!-- TABLA -->
-<div class="table-wrap">
-<table>
-<thead>
-<tr>
-<th>Fecha</th><th>Día</th><th>Importe</th><th>Tienda</th>
-<th>Recibido</th><th>Real</th><th>Diferencia</th>
-<th>Usuario</th><th></th>
-</tr>
-</thead>
-<tbody id="tbody"></tbody>
-</table>
-</div>
-
+  <!-- TABLA -->
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha</th><th>Día</th><th>Importe</th><th>Tienda</th>
+        <th>Recibido</th><th>Real</th><th>Diferencia</th><th>Usuario</th><th></th>
+      </tr>
+    </thead>
+    <tbody id="tb"></tbody>
+  </table>
 </div>
 
 <script>
-const users = [
-  { u: "admin", p: "1234" },
-  { u: "tienda1", p: "1111" },
-  { u: "tienda2", p: "2222" }
+/* USUARIOS */
+const USERS=[
+ {u:"admin",p:"1234"},
+ {u:"tienda1",p:"1111"},
+ {u:"tienda2",p:"2222"},
+ {u:"tienda3",p:"3333"}
 ];
 
-let data = JSON.parse(localStorage.getItem("efectivo") || "[]");
-let currentUser = null;
+let data=JSON.parse(localStorage.getItem("efectivo")||"[]");
+let actual=null;
 
 /* LOGIN */
-function login() {
-  const u = document.getElementById("user").value.trim();
-  const p = document.getElementById("pass").value.trim();
-  const error = document.getElementById("loginError");
+function login(){
+ const u=document.getElementById("u").value;
+ const p=document.getElementById("p").value;
+ if(!USERS.find(x=>x.u===u&&x.p===p)){
+  error.style.display="block";return;
+ }
+ actual=u;
+ loginDiv.style.display="none";
+ userTxt.textContent=u;
+ loadUsers();
+ render();
+}
+function logout(){actual=null;loginDiv.style.display="flex"}
+const loginDiv=document.getElementById("login");
 
-  const ok = users.find(x => x.u === u && x.p === p);
-  if (!ok) {
-    error.style.display = "block";
-    return;
-  }
-
-  error.style.display = "none";
-  currentUser = u;
-  document.getElementById("currentUser").textContent = u;
-  document.getElementById("login").style.display = "none";
-  render();
+/* ADD */
+function add(){
+ if(!actual)return;
+ data.push({
+  fecha:fFecha.value,
+  imp:+fImp.value||0,
+  tienda:fTienda.value,
+  rec:fRec.value,
+  real:+fReal.value||0,
+  user:actual
+ });
+ save();render();
 }
 
-function logout() {
-  currentUser = null;
-  document.getElementById("login").style.display = "flex";
-}
-
-/* GUARDAR */
-function save() {
-  localStorage.setItem("efectivo", JSON.stringify(data));
-}
-
-/* AÑADIR */
-function add(e) {
-  e.preventDefault();
-
-  data.push({
-    fecha: fFecha.value,
-    importe: parseFloat(fImporte.value),
-    tienda: fTienda.value,
-    recibido: fRecibido.value,
-    real: parseFloat(fImporteReal.value) || 0,
-    user: currentUser
-  });
-
-  save();
-  e.target.reset();
-  render();
-}
-/* BORRAR */
-function del(i) {
-  if (!confirm("¿Borrar línea?")) return;
-  data.splice(i, 1);
-  save();
-  render();
+/* FILTROS */
+function clearFilters(){
+ ftTienda.value=ftDesde.value=ftHasta.value=ftRec.value=ftUser.value="";
+ render();
 }
 
 /* RENDER */
-function render() {
-  const tbody = document.getElementById("tbody");
-  const resumen = document.getElementById("resumen");
+function render(){
+ tb.innerHTML="";
+ let list=data.filter(x=>{
+  if(ftTienda.value && !x.tienda.toLowerCase().includes(ftTienda.value.toLowerCase()))return false;
+  if(ftDesde.value && x.fecha<ftDesde.value)return false;
+  if(ftHasta.value && x.fecha>ftHasta.value)return false;
+  if(ftRec.value && x.rec!==ftRec.value)return false;
+  if(ftUser.value && x.user!==ftUser.value)return false;
+  return true;
+ }).sort((a,b)=>b.fecha.localeCompare(a.fecha));
 
-  tbody.innerHTML = "";
-  let pendiente = 0;
+ let pendiente=0;
+ list.forEach((x,i)=>{
+  const d=(x.real||0)-(x.imp||0);
+  if(x.rec==="No") pendiente+=x.imp;
+  tb.innerHTML+=`
+  <tr>
+   <td>${x.fecha}</td>
+   <td>${new Date(x.fecha).toLocaleDateString("es",{weekday:"short"})}</td>
+   <td>${x.imp.toFixed(2)}</td>
+   <td>${x.tienda}</td>
+   <td class="${x.rec==="Sí"?"green":"red"}">${x.rec}</td>
+   <td>${x.real.toFixed(2)}</td>
+   <td class="${d<0?"red":"green"}">${d.toFixed(2)}</td>
+   <td>${x.user}</td>
+   <td><button onclick="del(${i})">✕</button></td>
+  </tr>`;
+ });
 
-  data
-    .sort((a, b) => b.fecha.localeCompare(a.fecha))
-    .forEach((d, i) => {
-      if (d.recibido === "No") pendiente += d.importe;
-
-      const dif = (d.real || 0) - d.importe;
-
-      tbody.innerHTML += `
-        <tr>
-          <td>${d.fecha}</td>
-          <td>${new Date(d.fecha).toLocaleDateString("es", { weekday: "long" })}</td>
-          <td class="text-right">${d.importe.toFixed(2)}</td>
-          <td>${d.tienda}</td>
-          <td>${d.recibido}</td>
-          <td class="text-right">${(d.real || 0).toFixed(2)}</td>
-          <td class="text-right ${dif !== 0 ? "diff" : "ok"}">${dif.toFixed(2)}</td>
-          <td>${d.user}</td>
-          <td><button class="btn-danger" onclick="del(${i})">X</button></td>
-        </tr>`;
-    });
-
-  resumen.textContent =
-    `Movimientos: ${data.length} · Pendiente: ${pendiente.toFixed(2)} €`;
-}
-</script>
-
-
-function clearFilters(){
-fFilTienda.value=fDesde.value=fHasta.value=fFilRec.value=fFilUser.value="";
-render();
+ resumen.textContent=`Movimientos: ${list.length} · Pendiente: ${pendiente.toFixed(2)} €`;
 }
 
+/* DELETE */
+function del(i){
+ if(confirm("¿Borrar?")){data.splice(i,1);save();render();}
+}
+
+/* HELPERS */
+function save(){localStorage.setItem("efectivo",JSON.stringify(data))}
+function loadUsers(){
+ ftUser.innerHTML="<option value=''>Todos</option>";
+ USERS.forEach(u=>ftUser.innerHTML+=`<option>${u.u}</option>`);
+}
 document.querySelectorAll("input,select").forEach(e=>e.addEventListener("input",render));
 </script>
-
 </body>
 </html>
-
