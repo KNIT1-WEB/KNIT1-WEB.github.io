@@ -1,29 +1,4 @@
-<script>
-/* ================================
-   USUARIOS PERMITIDOS
-================================ */
-const usuarios = [
-  { usuario: "admin", pass: "1234" },
-  { usuario: "tienda1", pass: "1111" },
-  { usuario: "tienda2", pass: "2222" },
-  { usuario: "tienda3", pass: "3333" }
-];
-
-/* Carga datos guardados */
-let cobros = JSON.parse(localStorage.getItem("cobros_efectivo") || "[]");
-
-/* Usuario actual */
-let usuarioActual = null;
-
-/* ================================
-   LOGIN
-================================ */
-const loginOverlay = document.getElementById("loginOverlay");
-const btnLogin = document.getElementById("btnLogin");
-
-btnLogin.addEventListener("click", () => {
-  const user = document.getElementById("loginUser").value.trim();
-  const pass = document.getElementById("loginPass").value.trim();
+document.getElementById("loginPass").value.trim();
 
   const encontrado = usuarios.find(u => u.usuario === user && u.pass === pass);
 
