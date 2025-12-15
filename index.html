@@ -113,83 +113,103 @@ tr:nth-child(even){background:#fafafa}
 </div>
 
 <script>
-const users=[
-{u:"admin",p:"1234"},
-{u:"tienda1",p:"1111"},
-{u:"tienda2",p:"2222"}
+const users = [
+  { u: "admin", p: "1234" },
+  { u: "tienda1", p: "1111" },
+  { u: "tienda2", p: "2222" }
 ];
 
-let data=JSON.parse(localStorage.getItem("efectivo")||"[]");
-let current=null;
+let data = JSON.parse(localStorage.getItem("efectivo") || "[]");
+let currentUser = null;
 
-function login(){
-const u=user.value,p=pass.value;
-const ok=users.find(x=>x.u===u&&x.p===p);
-if(!ok){loginError.style.display="block";return;}
-current=u;
-currentUser.textContent=u;
-login.style.display="none";
-loadUserFilter();
-render();
+/* LOGIN */
+function login() {
+  const u = document.getElementById("user").value.trim();
+  const p = document.getElementById("pass").value.trim();
+  const error = document.getElementById("loginError");
+
+  const ok = users.find(x => x.u === u && x.p === p);
+  if (!ok) {
+    error.style.display = "block";
+    return;
+  }
+
+  error.style.display = "none";
+  currentUser = u;
+  document.getElementById("currentUser").textContent = u;
+  document.getElementById("login").style.display = "none";
+  render();
 }
 
-function logout(){current=null;login.style.display="flex";}
-
-function add(e){
-e.preventDefault();
-data.push({
-fecha:fFecha.value,
-importe:+fImporte.value,
-tienda:fTienda.value,
-recibido:fRecibido.value,
-real:+fImporteReal.value||0,
-user:current
-});
-save();render();e.target.reset();
+function logout() {
+  currentUser = null;
+  document.getElementById("login").style.display = "flex";
 }
 
-function save(){localStorage.setItem("efectivo",JSON.stringify(data));}
-
-function del(i){if(confirm("¿Borrar línea?")){data.splice(i,1);save();render();}}
-
-function loadUserFilter(){
-fFilUser.innerHTML='<option value="">Todos</option>';
-[...new Set(data.map(d=>d.user))].forEach(u=>{
-fFilUser.innerHTML+=`<option>${u}</option>`;
-});
+/* GUARDAR */
+function save() {
+  localStorage.setItem("efectivo", JSON.stringify(data));
 }
 
-function render(){
-tbody.innerHTML="";
-let list=data
-.filter(d=>(!fFilTienda.value||d.tienda.toLowerCase().includes(fFilTienda.value.toLowerCase())))
-.filter(d=>(!fDesde.value||d.fecha>=fDesde.value))
-.filter(d=>(!fHasta.value||d.fecha<=fHasta.value))
-.filter(d=>(!fFilRec.value||d.recibido===fFilRec.value))
-.filter(d=>(!fFilUser.value||d.user===fFilUser.value))
-.sort((a,b)=>b.fecha.localeCompare(a.fecha));
+/* AÑADIR */
+function add(e) {
+  e.preventDefault();
 
-let pendiente=0;
+  data.push({
+    fecha: fFecha.value,
+    importe: parseFloat(fImporte.value),
+    tienda: fTienda.value,
+    recibido: fRecibido.value,
+    real: parseFloat(fImporteReal.value) || 0,
+    user: currentUser
+  });
 
-list.forEach((d,i)=>{
-const dif=(d.real||0)-d.importe;
-if(d.recibido==="No")pendiente+=d.importe;
-tbody.innerHTML+=`
-<tr>
-<td>${d.fecha}</td>
-<td>${new Date(d.fecha).toLocaleDateString("es",{weekday:"long"})}</td>
-<td class="text-right">${d.importe.toFixed(2)}</td>
-<td>${d.tienda}</td>
-<td class="${d.recibido==="Sí"?"ok":"diff"}">${d.recibido}</td>
-<td class="text-right">${(d.real||0).toFixed(2)}</td>
-<td class="text-right ${dif!==0?"diff":"ok"}">${dif.toFixed(2)}</td>
-<td>${d.user}</td>
-<td><button class="btn-danger" onclick="del(${i})">X</button></td>
-</tr>`;
-});
-
-resumen.textContent=`Movimientos: ${list.length} · Pendiente según filtros: ${pendiente.toFixed(2)} €`;
+  save();
+  e.target.reset();
+  render();
 }
+/* BORRAR */
+function del(i) {
+  if (!confirm("¿Borrar línea?")) return;
+  data.splice(i, 1);
+  save();
+  render();
+}
+
+/* RENDER */
+function render() {
+  const tbody = document.getElementById("tbody");
+  const resumen = document.getElementById("resumen");
+
+  tbody.innerHTML = "";
+  let pendiente = 0;
+
+  data
+    .sort((a, b) => b.fecha.localeCompare(a.fecha))
+    .forEach((d, i) => {
+      if (d.recibido === "No") pendiente += d.importe;
+
+      const dif = (d.real || 0) - d.importe;
+
+      tbody.innerHTML += `
+        <tr>
+          <td>${d.fecha}</td>
+          <td>${new Date(d.fecha).toLocaleDateString("es", { weekday: "long" })}</td>
+          <td class="text-right">${d.importe.toFixed(2)}</td>
+          <td>${d.tienda}</td>
+          <td>${d.recibido}</td>
+          <td class="text-right">${(d.real || 0).toFixed(2)}</td>
+          <td class="text-right ${dif !== 0 ? "diff" : "ok"}">${dif.toFixed(2)}</td>
+          <td>${d.user}</td>
+          <td><button class="btn-danger" onclick="del(${i})">X</button></td>
+        </tr>`;
+    });
+
+  resumen.textContent =
+    `Movimientos: ${data.length} · Pendiente: ${pendiente.toFixed(2)} €`;
+}
+</script>
+
 
 function clearFilters(){
 fFilTienda.value=fDesde.value=fHasta.value=fFilRec.value=fFilUser.value="";
