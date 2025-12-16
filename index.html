@@ -1,166 +1,199 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <title>Efectivo</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<!-- Firebase CDN -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-body{font-family:system-ui;background:#e6e6e6;margin:0;padding:20px}
-.app{max-width:1100px;margin:auto;background:#fff;padding:20px;border-radius:14px}
+*{box-sizing:border-box;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+body{margin:0;padding:1rem;background:#e6e6e6}
+.app{max-width:1200px;margin:auto;background:#fff;padding:1.5rem;border-radius:14px;box-shadow:0 4px 18px rgba(0,0,0,.15)}
 h1{margin:0}
-form,.filters{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-top:16px}
-.filters{background:#f3f3f3;padding:14px;border-radius:12px;margin-top:30px}
-input,select,button{padding:8px;border-radius:8px;border:1px solid #bbb}
-button{cursor:pointer;background:#111;color:#fff;border:none}
-table{width:100%;border-collapse:collapse;margin-top:20px}
-th,td{padding:8px;border-bottom:1px solid #eee}
+.subtitle{color:#555;margin-bottom:1rem}
+
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap}
+
+form, .filters{
+display:grid;
+grid-template-columns:repeat(6,1fr);
+gap:1rem;
+margin-top:1rem
+}
+
+.filters{margin-top:2rem;padding:1rem;background:#f2f2f2;border-radius:12px}
+
+label{font-size:.85rem;font-weight:600}
+input,select,textarea{
+width:100%;padding:.55rem;border-radius:8px;border:1px solid #bbb
+}
+textarea{resize:vertical}
+
+button{border:none;border-radius:8px;padding:.6rem 1rem;cursor:pointer}
+.btn{background:#111;color:#fff}
+.btn.gray{background:#666}
+.btn.red{background:#c62828}
+
+table{width:100%;border-collapse:collapse;margin-top:1.5rem}
+th,td{padding:.6rem;border-bottom:1px solid #eee;font-size:.9rem}
 th{background:#f0f0f0}
-.text-right{text-align:right}
-.red{color:#c62828;font-weight:700}
-.green{color:#0a7d0a;font-weight:700}
+tr:nth-child(even){background:#fafafa}
+.right{text-align:right}
+
+.bad{color:#c62828;font-weight:700}
+.good{color:#0a7d0a;font-weight:700}
+
+@media(max-width:900px){
+form,.filters{grid-template-columns:1fr 1fr}
+}
+@media(max-width:600px){
+form,.filters{grid-template-columns:1fr}
+}
 </style>
 </head>
 
 <body>
 
+<div id="login" style="position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:10">
+  <div style="background:#fff;padding:1.5rem;border-radius:14px;width:300px">
+    <h2>Acceso</h2>
+    <input id="lUser" placeholder="Usuario">
+    <input id="lPass" type="password" placeholder="Contraseña">
+    <div id="lErr" style="color:#c62828;display:none">Error</div>
+    <button class="btn" id="btnLogin" style="width:100%">Entrar</button>
+  </div>
+</div>
+
 <div class="app">
+  <div class="topbar">
+    <div>
+      <h1>Efectivo</h1>
+      <div class="subtitle">Registro de cobros por tienda</div>
+    </div>
+    <div>
+      Usuario: <b id="uActual"></b>
+      <button class="btn gray" id="btnLogout">Cambiar</button>
+    </div>
+  </div>
 
-<h1>Efectivo</h1>
-<p>Registro de cobros por tienda</p>
+  <!-- ALTA -->
+  <form id="form">
+    <div><label>Fecha</label><input type="date" id="fFecha" required></div>
+    <div><label>Importe anotado</label><input type="number" id="fImp" step="0.01"></div>
+    <div><label>Tienda</label><textarea id="fTienda"></textarea></div>
+    <div><label>Recibido</label><select id="fRec"><option>No</option><option>Sí</option></select></div>
+    <div><label>Importe recibido</label><input type="number" id="fReal" step="0.01"></div>
+    <div><button class="btn" style="margin-top:1.6rem">Añadir</button></div>
+  </form>
 
-<div id="loginBox">
-  <input id="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Contraseña">
-  <button onclick="login()">Entrar</button>
-</div>
+  <!-- FILTROS -->
+  <div class="filters">
+    <div><label>Tienda</label><input id="fFTienda"></div>
+    <div><label>Desde</label><input type="date" id="fDesde"></div>
+    <div><label>Hasta</label><input type="date" id="fHasta"></div>
+    <div><label>Recibido</label><select id="fFRec"><option value="">Todos</option><option>No</option><option>Sí</option></select></div>
+    <div><label>Creador</label><select id="fUser"><option value="">Todos</option></select></div>
+    <div><button class="btn gray" id="clearFilters" style="margin-top:1.6rem">Quitar filtros</button></div>
+  </div>
 
-<div id="app" style="display:none">
+  <div id="resumen" style="margin-top:1rem;font-weight:600"></div>
 
-<p>Usuario: <strong id="userMail"></strong>
-<button onclick="logout()">Salir</button></p>
-
-<form onsubmit="addMovimiento(event)">
-  <input type="date" id="fecha" required>
-  <input type="number" id="importe" placeholder="Importe anotado" step="0.01" required>
-  <input id="tienda" placeholder="Tienda" required>
-  <select id="recibido">
-    <option value="No">No</option>
-    <option value="Sí">Sí</option>
-  </select>
-  <input type="number" id="real" placeholder="Importe recibido" step="0.01">
-  <button>Añadir</button>
-</form>
-
-<div class="filters">
-  <input id="fTienda" placeholder="Filtrar tienda">
-  <input type="date" id="fDesde">
-  <input type="date" id="fHasta">
-  <select id="fRec">
-    <option value="">Todos</option>
-    <option value="Sí">Recibidos</option>
-    <option value="No">Pendientes</option>
-  </select>
-  <button onclick="clearFilters()">Quitar filtros</button>
-</div>
-
-<p id="resumen"></p>
-
-<table>
-<thead>
-<tr>
-<th>Fecha</th><th>Tienda</th><th>Importe</th>
-<th>Recibido</th><th>Real</th><th>Diferencia</th><th></th>
-</tr>
-</thead>
-<tbody id="tbody"></tbody>
-</table>
-
-</div>
+  <!-- TABLA -->
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha</th><th>Día</th><th>Importe</th><th>Tienda</th>
+        <th>Recibido</th><th>Real</th><th>Diferencia</th><th>Usuario</th><th></th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
 </div>
 
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyDgFywPttkRgTTPS-arf7JZTo6cur7BbqM",
-  authDomain: "efectivo-4234e.firebaseapp.com",
-  projectId: "efectivo-4234e"
+document.addEventListener("DOMContentLoaded",()=>{
+
+const USERS=[
+ {u:"admin",p:"1234"},
+ {u:"tienda1",p:"1111"},
+ {u:"tienda2",p:"2222"}
+];
+
+let actual=null;
+let data=JSON.parse(localStorage.getItem("efectivo")||"[]");
+
+const $=id=>document.getElementById(id);
+
+$("btnLogin").onclick=()=>{
+ const u=$("lUser").value,p=$("lPass").value;
+ if(!USERS.find(x=>x.u===u&&x.p===p)){ $("lErr").style.display="block";return}
+ actual=u;$("uActual").textContent=u;$("login").style.display="none";
+ cargarUsers();render();
 };
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+$("btnLogout").onclick=()=>location.reload();
 
-auth.onAuthStateChanged(u=>{
-  if(u){
-    userMail.textContent=u.email;
-    loginBox.style.display="none";
-    app.style.display="block";
-    listen();
-  }else{
-    app.style.display="none";
-    loginBox.style.display="block";
-  }
+$("form").onsubmit=e=>{
+ e.preventDefault();
+ data.push({
+  fecha:$("fFecha").value,
+  imp:+$("fImp").value||0,
+  tienda:$("fTienda").value,
+  rec:$("fRec").value,
+  real:+$("fReal").value||0,
+  user:actual
+ });
+ save();render();e.target.reset();
+};
+
+function save(){localStorage.setItem("efectivo",JSON.stringify(data))}
+
+function cargarUsers(){
+ const s=$("fUser");s.innerHTML='<option value="">Todos</option>';
+ USERS.forEach(u=>s.innerHTML+=`<option>${u.u}</option>`);
+}
+
+document.querySelectorAll("input,select").forEach(e=>e.oninput=render);
+$("clearFilters").onclick=()=>{["fFTienda","fDesde","fHasta","fFRec","fUser"].forEach(i=>$(i).value="");render()};
+
+function render(){
+ const tb=$("tbody");tb.innerHTML="";
+ let lista=data.filter(x=>{
+  if($("fFTienda").value && !x.tienda.toLowerCase().includes($("fFTienda").value.toLowerCase()))return false;
+  if($("fDesde").value && x.fecha<$("fDesde").value)return false;
+  if($("fHasta").value && x.fecha>$("fHasta").value)return false;
+  if($("fFRec").value && x.rec!==$("fFRec").value)return false;
+  if($("fUser").value && x.user!==$("fUser").value)return false;
+  return true;
+ });
+
+ let pendiente=0;
+ lista.forEach((x,i)=>{
+  const dif=x.real-x.imp;
+  if(x.rec==="No")pendiente+=x.imp;
+  tb.innerHTML+=`
+  <tr>
+    <td>${x.fecha}</td>
+    <td>${new Date(x.fecha).toLocaleDateString("es",{weekday:"short"})}</td>
+    <td class="right">${x.imp.toFixed(2)}</td>
+    <td>${x.tienda}</td>
+    <td>
+      <select onchange="data[${i}].rec=this.value;save();render()">
+        <option ${x.rec==="No"?"selected":""}>No</option>
+        <option ${x.rec==="Sí"?"selected":""}>Sí</option>
+      </select>
+    </td>
+    <td><input type="number" value="${x.real}" step="0.01"
+      onchange="data[${i}].real=+this.value;save();render()"></td>
+    <td class="${dif<0?"bad":"good"}">${dif.toFixed(2)}</td>
+    <td>${x.user}</td>
+    <td><button class="btn red" onclick="data.splice(${i},1);save();render()">✕</button></td>
+  </tr>`;
+ });
+ $("resumen").textContent=`Movimientos: ${lista.length} · Pendiente: ${pendiente.toFixed(2)} €`;
+}
+
 });
-
-function login(){
-  auth.signInWithEmailAndPassword(email.value,password.value)
-  .catch(e=>alert("Error de acceso"));
-}
-
-function logout(){auth.signOut()}
-
-function addMovimiento(e){
-  e.preventDefault();
-  db.collection("movimientos").add({
-    fecha:fecha.value,
-    tienda:tienda.value,
-    importe:+importe.value,
-    real:+real.value||0,
-    recibido:recibido.value,
-    user:auth.currentUser.email,
-    ts:firebase.firestore.FieldValue.serverTimestamp()
-  });
-  e.target.reset();
-}
-
-function listen(){
-  db.collection("movimientos").orderBy("fecha","desc")
-  .onSnapshot(s=>{
-    tbody.innerHTML="";
-    let pendiente=0;
-    s.forEach(d=>{
-      const m=d.data();
-      const diff=(m.real||0)-m.importe;
-      if(m.recibido==="No") pendiente+=m.importe;
-      tbody.innerHTML+=`
-      <tr>
-        <td>${m.fecha}</td>
-        <td>${m.tienda}</td>
-        <td class="text-right">${m.importe.toFixed(2)}</td>
-        <td>${m.recibido}</td>
-        <td class="text-right">${(m.real||0).toFixed(2)}</td>
-        <td class="text-right ${diff!==0?'red':'green'}">${diff.toFixed(2)}</td>
-        <td><button onclick="del('${d.id}')">X</button></td>
-      </tr>`;
-    });
-    resumen.textContent=`Pendiente total: ${pendiente.toFixed(2)} €`;
-  });
-}
-
-function del(id){
-  if(confirm("¿Borrar movimiento?"))
-    db.collection("movimientos").doc(id).delete();
-}
-
-function clearFilters(){
-  fTienda.value=fDesde.value=fHasta.value=fRec.value="";
-}
 </script>
-
 </body>
 </html>
