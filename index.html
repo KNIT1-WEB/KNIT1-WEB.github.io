@@ -3,201 +3,164 @@
 <head>
 <meta charset="UTF-8">
 <title>Efectivo</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Firebase CDN -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
-*{box-sizing:border-box;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
-body{margin:0;padding:1rem;background:#e6e6e6}
-.app{max-width:1200px;margin:auto;background:#fff;padding:1.5rem;border-radius:14px;box-shadow:0 4px 16px rgba(0,0,0,.12)}
+body{font-family:system-ui;background:#e6e6e6;margin:0;padding:20px}
+.app{max-width:1100px;margin:auto;background:#fff;padding:20px;border-radius:14px}
 h1{margin:0}
-.sub{color:#555;margin-bottom:1rem}
-
-.row{display:grid;grid-template-columns:repeat(6,1fr);gap:1rem;align-items:end}
-.filters{margin:2rem 0;padding:1rem;background:#f4f4f4;border-radius:10px}
-input,select,textarea,button{padding:.55rem;border-radius:8px;border:1px solid #bbb;font-size:.95rem}
-textarea{resize:vertical}
-button{cursor:pointer}
-.btn{background:#111;color:#fff;border:none}
-.btn-gray{background:#666;color:#fff;border:none}
-
-table{width:100%;border-collapse:collapse;margin-top:1rem}
-th,td{padding:.6rem;border-bottom:1px solid #eee;text-align:left}
+form,.filters{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-top:16px}
+.filters{background:#f3f3f3;padding:14px;border-radius:12px;margin-top:30px}
+input,select,button{padding:8px;border-radius:8px;border:1px solid #bbb}
+button{cursor:pointer;background:#111;color:#fff;border:none}
+table{width:100%;border-collapse:collapse;margin-top:20px}
+th,td{padding:8px;border-bottom:1px solid #eee}
 th{background:#f0f0f0}
-tr:nth-child(even){background:#fafafa}
-
+.text-right{text-align:right}
 .red{color:#c62828;font-weight:700}
 .green{color:#0a7d0a;font-weight:700}
-
-#login{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:10}
-#loginBox{background:#fff;padding:1.4rem;border-radius:14px;width:320px}
-#loginBox input{width:100%;margin:.5rem 0}
-#error{color:#c62828;font-size:.9rem;display:none}
-
-@media(max-width:900px){.row{grid-template-columns:1fr 1fr}}
-@media(max-width:600px){.row{grid-template-columns:1fr}}
 </style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
-<div id="login">
-  <div id="loginBox">
-    <h3>Acceso</h3>
-    <div id="error">Usuario o contraseña incorrectos</div>
-    <input id="u" placeholder="Usuario">
-    <input id="p" type="password" placeholder="Contraseña">
-    <button class="btn" onclick="login()">Entrar</button>
-  </div>
+<div class="app">
+
+<h1>Efectivo</h1>
+<p>Registro de cobros por tienda</p>
+
+<div id="loginBox">
+  <input id="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Contraseña">
+  <button onclick="login()">Entrar</button>
 </div>
 
-<div class="app">
-  <h1>Efectivo</h1>
-  <div class="sub">Registro de cobros por tienda</div>
+<div id="app" style="display:none">
 
-  <div>
-    Usuario actual: <b id="userTxt"></b>
-    <button class="btn-gray" onclick="logout()">Cambiar</button>
-  </div>
+<p>Usuario: <strong id="userMail"></strong>
+<button onclick="logout()">Salir</button></p>
 
-  <!-- ALTA -->
-  <div class="row" style="margin-top:1rem">
-    <div><label>Fecha</label><input type="date" id="fFecha"></div>
-    <div><label>Importe anotado</label><input type="number" id="fImp"></div>
-    <div><label>Tienda</label><textarea id="fTienda"></textarea></div>
-    <div><label>Recibido</label>
-      <select id="fRec">
-        <option>No</option><option>Sí</option>
-      </select>
-    </div>
-    <div><label>Importe recibido</label><input type="number" id="fReal"></div>
-    <div><button class="btn" onclick="add()">Añadir</button></div>
-  </div>
+<form onsubmit="addMovimiento(event)">
+  <input type="date" id="fecha" required>
+  <input type="number" id="importe" placeholder="Importe anotado" step="0.01" required>
+  <input id="tienda" placeholder="Tienda" required>
+  <select id="recibido">
+    <option value="No">No</option>
+    <option value="Sí">Sí</option>
+  </select>
+  <input type="number" id="real" placeholder="Importe recibido" step="0.01">
+  <button>Añadir</button>
+</form>
 
-  <!-- FILTROS -->
-  <div class="filters row">
-    <div><label>Tienda</label><input id="ftTienda"></div>
-    <div><label>Desde</label><input type="date" id="ftDesde"></div>
-    <div><label>Hasta</label><input type="date" id="ftHasta"></div>
-    <div><label>Recibido</label>
-      <select id="ftRec">
-        <option value="">Todos</option>
-        <option>Sí</option><option>No</option>
-      </select>
-    </div>
-    <div><label>Creador</label>
-      <select id="ftUser"></select>
-    </div>
-    <div><button class="btn-gray" onclick="clearFilters()">Quitar filtros</button></div>
-  </div>
+<div class="filters">
+  <input id="fTienda" placeholder="Filtrar tienda">
+  <input type="date" id="fDesde">
+  <input type="date" id="fHasta">
+  <select id="fRec">
+    <option value="">Todos</option>
+    <option value="Sí">Recibidos</option>
+    <option value="No">Pendientes</option>
+  </select>
+  <button onclick="clearFilters()">Quitar filtros</button>
+</div>
 
-  <div id="resumen"></div>
+<p id="resumen"></p>
 
-  <!-- TABLA -->
-  <table>
-    <thead>
-      <tr>
-        <th>Fecha</th><th>Día</th><th>Importe</th><th>Tienda</th>
-        <th>Recibido</th><th>Real</th><th>Diferencia</th><th>Usuario</th><th></th>
-      </tr>
-    </thead>
-    <tbody id="tb"></tbody>
-  </table>
+<table>
+<thead>
+<tr>
+<th>Fecha</th><th>Tienda</th><th>Importe</th>
+<th>Recibido</th><th>Real</th><th>Diferencia</th><th></th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
+
+</div>
 </div>
 
 <script>
-/* USUARIOS */
-const USERS=[
- {u:"admin",p:"1234"},
- {u:"tienda1",p:"1111"},
- {u:"tienda2",p:"2222"},
- {u:"tienda3",p:"3333"}
-];
+const firebaseConfig = {
+  apiKey: "AIzaSyDgFywPttkRgTTPS-arf7JZTo6cur7BbqM",
+  authDomain: "efectivo-4234e.firebaseapp.com",
+  projectId: "efectivo-4234e"
+};
 
-let data=JSON.parse(localStorage.getItem("efectivo")||"[]");
-let actual=null;
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
 
-/* LOGIN */
+auth.onAuthStateChanged(u=>{
+  if(u){
+    userMail.textContent=u.email;
+    loginBox.style.display="none";
+    app.style.display="block";
+    listen();
+  }else{
+    app.style.display="none";
+    loginBox.style.display="block";
+  }
+});
+
 function login(){
- const u=document.getElementById("u").value;
- const p=document.getElementById("p").value;
- if(!USERS.find(x=>x.u===u&&x.p===p)){
-  error.style.display="block";return;
- }
- actual=u;
- loginDiv.style.display="none";
- userTxt.textContent=u;
- loadUsers();
- render();
-}
-function logout(){actual=null;loginDiv.style.display="flex"}
-const loginDiv=document.getElementById("login");
-
-/* ADD */
-function add(){
- if(!actual)return;
- data.push({
-  fecha:fFecha.value,
-  imp:+fImp.value||0,
-  tienda:fTienda.value,
-  rec:fRec.value,
-  real:+fReal.value||0,
-  user:actual
- });
- save();render();
+  auth.signInWithEmailAndPassword(email.value,password.value)
+  .catch(e=>alert("Error de acceso"));
 }
 
-/* FILTROS */
+function logout(){auth.signOut()}
+
+function addMovimiento(e){
+  e.preventDefault();
+  db.collection("movimientos").add({
+    fecha:fecha.value,
+    tienda:tienda.value,
+    importe:+importe.value,
+    real:+real.value||0,
+    recibido:recibido.value,
+    user:auth.currentUser.email,
+    ts:firebase.firestore.FieldValue.serverTimestamp()
+  });
+  e.target.reset();
+}
+
+function listen(){
+  db.collection("movimientos").orderBy("fecha","desc")
+  .onSnapshot(s=>{
+    tbody.innerHTML="";
+    let pendiente=0;
+    s.forEach(d=>{
+      const m=d.data();
+      const diff=(m.real||0)-m.importe;
+      if(m.recibido==="No") pendiente+=m.importe;
+      tbody.innerHTML+=`
+      <tr>
+        <td>${m.fecha}</td>
+        <td>${m.tienda}</td>
+        <td class="text-right">${m.importe.toFixed(2)}</td>
+        <td>${m.recibido}</td>
+        <td class="text-right">${(m.real||0).toFixed(2)}</td>
+        <td class="text-right ${diff!==0?'red':'green'}">${diff.toFixed(2)}</td>
+        <td><button onclick="del('${d.id}')">X</button></td>
+      </tr>`;
+    });
+    resumen.textContent=`Pendiente total: ${pendiente.toFixed(2)} €`;
+  });
+}
+
+function del(id){
+  if(confirm("¿Borrar movimiento?"))
+    db.collection("movimientos").doc(id).delete();
+}
+
 function clearFilters(){
- ftTienda.value=ftDesde.value=ftHasta.value=ftRec.value=ftUser.value="";
- render();
+  fTienda.value=fDesde.value=fHasta.value=fRec.value="";
 }
-
-/* RENDER */
-function render(){
- tb.innerHTML="";
- let list=data.filter(x=>{
-  if(ftTienda.value && !x.tienda.toLowerCase().includes(ftTienda.value.toLowerCase()))return false;
-  if(ftDesde.value && x.fecha<ftDesde.value)return false;
-  if(ftHasta.value && x.fecha>ftHasta.value)return false;
-  if(ftRec.value && x.rec!==ftRec.value)return false;
-  if(ftUser.value && x.user!==ftUser.value)return false;
-  return true;
- }).sort((a,b)=>b.fecha.localeCompare(a.fecha));
-
- let pendiente=0;
- list.forEach((x,i)=>{
-  const d=(x.real||0)-(x.imp||0);
-  if(x.rec==="No") pendiente+=x.imp;
-  tb.innerHTML+=`
-  <tr>
-   <td>${x.fecha}</td>
-   <td>${new Date(x.fecha).toLocaleDateString("es",{weekday:"short"})}</td>
-   <td>${x.imp.toFixed(2)}</td>
-   <td>${x.tienda}</td>
-   <td class="${x.rec==="Sí"?"green":"red"}">${x.rec}</td>
-   <td>${x.real.toFixed(2)}</td>
-   <td class="${d<0?"red":"green"}">${d.toFixed(2)}</td>
-   <td>${x.user}</td>
-   <td><button onclick="del(${i})">✕</button></td>
-  </tr>`;
- });
-
- resumen.textContent=`Movimientos: ${list.length} · Pendiente: ${pendiente.toFixed(2)} €`;
-}
-
-/* DELETE */
-function del(i){
- if(confirm("¿Borrar?")){data.splice(i,1);save();render();}
-}
-
-/* HELPERS */
-function save(){localStorage.setItem("efectivo",JSON.stringify(data))}
-function loadUsers(){
- ftUser.innerHTML="<option value=''>Todos</option>";
- USERS.forEach(u=>ftUser.innerHTML+=`<option>${u.u}</option>`);
-}
-document.querySelectorAll("input,select").forEach(e=>e.addEventListener("input",render));
 </script>
+
 </body>
 </html>
