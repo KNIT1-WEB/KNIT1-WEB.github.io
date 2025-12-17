@@ -1,1 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Efectivo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<style>
+* { box-sizing: border-box; font-family: system-ui, sans-serif; }
+
+body {
+  margin: 0;
+  padding: 1rem;
+  background: #e6e6e6;
+}
+
+.app {
+  max-width: 1100px;
+  margin: auto;
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.15);
+}
+
+h1 { margin-top: 0; }
+
+form {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+@media(max-width:900px){
+  form { grid-template-columns: 1fr 1fr; }
+}
+@media(max-width:600px){
+  form { grid-template-columns: 1fr; }
+}
+
+label { font-weight: 600; font-size: .85rem; }
+
+input, select, textarea, button {
+  width: 100%;
+  padding: .55rem;
+  border-radius: 8px;
+  border: 1px solid #bbb;
+}
+
+button {
+  background: #222;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: .6rem;
+  border-bottom: 1px solid #eee;
+  font-size: .9rem;
+}
+
+th { background: #f2f2f2; }
+
+.text-right { text-align: right; }
+
+.estado-si { color: green; font-weight: 700; }
+.estado-no { color: red; font-weight: 700; }
+</style>
+</head>
+
+<body>
+
+<div class="app">
+  <h1>Efectivo</h1>
+  <p>Registro de cobros por tienda</p>
+
+  <p><strong>Usuario actual:</strong> <span id="usuarioActual">admin</span></p>
+
+  <form id="form">
+    <div>
+      <label>Fecha</label>
+      <input type="date" id="fecha" required>
+    </div>
+
+    <div>
+      <label>Importe (€)</label>
+      <input type="number" id="importe" step="0.01">
+    </div>
+
+    <div>
+      <label>Tienda</label>
+      <textarea id="tienda"></textarea>
+    </div>
+
+    <div>
+      <label>Recibido</label>
+      <select id="recibido">
+        <option>No</option>
+        <option>Sí</option>
+      </select>
+    </div>
+
+    <div>
+      <label>Cobra</label>
+      <input id="cobra">
+    </div>
+
+    <div>
+      <button>Añadir movimiento</button>
+    </div>
+  </form>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Día</th>
+        <th class="text-right">Importe</th>
+        <th>Tienda</th>
+        <th>Recibido</th>
+        <th>Creado por</th>
+        <th>Cobra</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="tabla"></tbody>
+  </table>
+</div>
+
+<script>
+const tabla = document.getElementById("tabla");
+const form = document.getElementById("form");
+
+let datos = JSON.parse(localStorage.getItem("efectivo")) || [];
+const usuario = "admin";
+
+form.addEventListener("submit", e => {
+  e.preventDefault();
+
+  datos.push({
+    fecha: fecha.value,
+    importe: Number(importe.value || 0),
+    tienda: tienda.value,
+    recibido: recibido.value,
+    cobra: cobra.value,
+    usuario
+  });
+
+  localStorage.setItem("efectivo", JSON.stringify(datos));
+  form.reset();
+  pintar();
+});
+
+function pintar(){
+  tabla.innerHTML = "";
+  datos.forEach((d,i)=>{
+    const dia = new Date(d.fecha).toLocaleDateString("es-ES",{weekday:"long"});
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${d.fecha}</td>
+      <td>${dia}</td>
+      <td class="text-right">${d.importe.toFixed(2)}</td>
+      <td>${d.tienda}</td>
+      <td class="${d.recibido==="Sí"?"estado-si":"estado-no"}">${d.recibido}</td>
+      <td>${d.usuario}</td>
+      <td>${d.cobra}</td>
+      <td><button onclick="borrar(${i})">X</button></td>
+    `;
+    tabla.appendChild(tr);
+  });
+}
+
+function borrar(i){
+  if(!confirm("¿Borrar movimiento?")) return;
+  datos.splice(i,1);
+  localStorage.setItem("efectivo", JSON.stringify(datos));
+  pintar();
+}
+
+pintar();
+</script>
+
+</body>
+</html>
