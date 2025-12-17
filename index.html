@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <title>Efectivo</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <style>
 *{box-sizing:border-box;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
 body{margin:0;padding:1rem;background:#e6e6e6}
@@ -14,8 +13,8 @@ button{border:0;border-radius:8px;padding:.6rem 1rem;cursor:pointer}
 .primary{background:#111;color:#fff}
 .secondary{background:#666;color:#fff}
 .danger{background:#c62828;color:#fff}
-form, .filters{display:grid;gap:1rem}
-form{grid-template-columns:repeat(6,1fr);margin-bottom:1.5rem}
+form,.filters{display:grid;gap:1rem}
+form{grid-template-columns:repeat(6,1fr)}
 .filters{grid-template-columns:repeat(6,1fr);background:#f4f4f4;padding:1rem;border-radius:10px;margin:2rem 0}
 label{font-size:.85rem;font-weight:600}
 input,select,textarea{width:100%;padding:.5rem;border-radius:8px;border:1px solid #bbb}
@@ -25,9 +24,7 @@ th{background:#f1f1f1}
 .right{text-align:right}
 .ok{color:#0a7d0a;font-weight:700}
 .no{color:#c62828;font-weight:700}
-@media(max-width:900px){
-  form,.filters{grid-template-columns:1fr}
-}
+@media(max-width:900px){form,.filters{grid-template-columns:1fr}}
 #login{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center}
 #loginBox{background:#fff;padding:1.5rem;border-radius:12px;width:320px}
 </style>
@@ -37,9 +34,9 @@ th{background:#f1f1f1}
 <div id="login">
   <div id="loginBox">
     <h2>Acceso</h2>
-    <input id="lUser" placeholder="Usuario">
-    <input id="lPass" type="password" placeholder="Contraseña">
-    <p id="lErr" style="color:red;display:none">Datos incorrectos</p>
+    <input id="loginUser" placeholder="Usuario">
+    <input id="loginPass" type="password" placeholder="Contraseña">
+    <p id="loginError" style="color:red;display:none">Datos incorrectos</p>
     <button class="primary" onclick="login()">Entrar</button>
   </div>
 </div>
@@ -48,30 +45,30 @@ th{background:#f1f1f1}
 <h1>Efectivo</h1>
 <p>Registro de cobros por tienda</p>
 
-<p>Usuario actual: <b id="uActual"></b>
+<p>Usuario actual: <b id="usuarioActual"></b>
 <button class="secondary" onclick="logout()">Cambiar usuario</button>
 </p>
 
 <form id="form">
-  <div><label>Fecha</label><input type="date" id="fFecha"></div>
-  <div><label>Importe anotado</label><input type="number" id="fImp" step="0.01"></div>
-  <div><label>Tienda</label><textarea id="fTienda"></textarea></div>
+  <div><label>Fecha</label><input type="date" id="fecha"></div>
+  <div><label>Importe anotado</label><input type="number" id="importe" step="0.01"></div>
+  <div><label>Tienda</label><textarea id="tienda"></textarea></div>
   <div><label>Recibido</label>
-    <select id="fRec"><option>No</option><option>Sí</option></select>
+    <select id="recibido"><option>No</option><option>Sí</option></select>
   </div>
-  <div><label>Importe recibido</label><input type="number" id="fReal" step="0.01"></div>
+  <div><label>Importe recibido</label><input type="number" id="real" step="0.01"></div>
   <div><button class="primary">Añadir</button></div>
 </form>
 
 <div class="filters">
-  <div><label>Tienda</label><input id="ftTienda"></div>
-  <div><label>Desde</label><input type="date" id="ftDesde"></div>
-  <div><label>Hasta</label><input type="date" id="ftHasta"></div>
+  <div><label>Tienda</label><input id="fTienda"></div>
+  <div><label>Desde</label><input type="date" id="fDesde"></div>
+  <div><label>Hasta</label><input type="date" id="fHasta"></div>
   <div><label>Recibido</label>
-    <select id="ftRec"><option value="">Todos</option><option>No</option><option>Sí</option></select>
+    <select id="fRec"><option value="">Todos</option><option>No</option><option>Sí</option></select>
   </div>
-  <div><label>Creador</label><select id="ftUser"></select></div>
-  <div><button class="secondary" onclick="clearFilters()">Quitar filtros</button></div>
+  <div><label>Usuario</label><select id="fUser"></select></div>
+  <div><button type="button" class="secondary" onclick="limpiarFiltros()">Quitar filtros</button></div>
 </div>
 
 <p id="resumen"></p>
@@ -88,91 +85,100 @@ th{background:#f1f1f1}
 </div>
 
 <script>
-const users=[
+const usuarios=[
 {u:"admin",p:"1234",r:"admin"},
 {u:"tienda1",p:"1111",r:"tienda"},
 {u:"tienda2",p:"2222",r:"tienda"},
 {u:"tienda3",p:"3333",r:"tienda"}
 ];
-let user=null;
-let data=JSON.parse(localStorage.getItem("efectivo")||"[]");
+
+let usuario=null;
+let datos=JSON.parse(localStorage.getItem("efectivo")||"[]");
 
 function login(){
-const u=lUser.value,p=lPass.value;
-const ok=users.find(x=>x.u===u&&x.p===p);
-if(!ok){lErr.style.display="block";return}
-user=ok;login.style.display="none";
-uActual.textContent=user.u;
-fillUsers();render();
+const u=loginUser.value,p=loginPass.value;
+const ok=usuarios.find(x=>x.u===u&&x.p===p);
+if(!ok){loginError.style.display="block";return}
+usuario=ok;
+login.style.display="none";
+usuarioActual.textContent=usuario.u;
+cargarUsuarios();
+render();
 }
+
 function logout(){location.reload()}
 
 form.onsubmit=e=>{
 e.preventDefault();
-data.push({
-id:Date.now(),fecha:fFecha.value,imp:+fImp.value||0,
-tienda:fTienda.value,rec:fRec.value,real:+fReal.value||0,
-user:user.u
+datos.push({
+id:Date.now(),
+fecha:fecha.value,
+importe:+importe.value||0,
+tienda:tienda.value,
+recibido:recibido.value,
+real:+real.value||0,
+usuario:usuario.u
 });
-save();form.reset();
+guardar();
+form.reset();
 };
 
-function fillUsers(){
-ftUser.innerHTML="<option value=''>Todos</option>";
-users.forEach(u=>ftUser.innerHTML+=`<option>${u.u}</option>`);
+function cargarUsuarios(){
+fUser.innerHTML="<option value=''>Todos</option>";
+usuarios.forEach(u=>fUser.innerHTML+=`<option>${u.u}</option>`);
 }
 
-function clearFilters(){
-[ftTienda,ftDesde,ftHasta].forEach(i=>i.value="");
-ftRec.value="";ftUser.value="";render();
+function limpiarFiltros(){
+[fTienda,fDesde,fHasta].forEach(e=>e.value="");
+fRec.value="";fUser.value="";
+render();
 }
 
 document.querySelectorAll("input,select").forEach(e=>e.oninput=render);
 
 function render(){
-let l=[...data];
-if(ftTienda.value)l=l.filter(x=>x.tienda.toLowerCase().includes(ftTienda.value.toLowerCase()));
-if(ftDesde.value)l=l.filter(x=>x.fecha>=ftDesde.value);
-if(ftHasta.value)l=l.filter(x=>x.fecha<=ftHasta.value);
-if(ftRec.value)l=l.filter(x=>x.rec===ftRec.value);
-if(ftUser.value)l=l.filter(x=>x.user===ftUser.value);
+let l=[...datos];
+if(fTienda.value)l=l.filter(x=>x.tienda.toLowerCase().includes(fTienda.value.toLowerCase()));
+if(fDesde.value)l=l.filter(x=>x.fecha>=fDesde.value);
+if(fHasta.value)l=l.filter(x=>x.fecha<=fHasta.value);
+if(fRec.value)l=l.filter(x=>x.recibido===fRec.value);
+if(fUser.value)l=l.filter(x=>x.usuario===fUser.value);
 
 tabla.innerHTML="";
 let pendiente=0;
 
 l.forEach(x=>{
-const dif=(x.imp||0)-(x.real||0);
-if(x.rec==="No")pendiente+=x.imp||0;
+const dif=(x.importe||0)-(x.real||0);
+if(x.recibido==="No")pendiente+=x.importe||0;
 
 tabla.innerHTML+=`
 <tr>
 <td>${x.fecha}</td>
 <td>${new Date(x.fecha).toLocaleDateString("es",{weekday:"short"})}</td>
-<td class="right">${x.imp.toFixed(2)}</td>
+<td class="right">${x.importe.toFixed(2)}</td>
 <td>${x.tienda}</td>
-<td>
-<select ${user.r!=="admin"?"":"onchange='chgRec("+x.id+",this.value)'"} ${user.r==="tienda"?"":"disabled"}>
-<option ${x.rec==="No"?"selected":""}>No</option>
-<option ${x.rec==="Sí"?"selected":""}>Sí</option>
-</select>
-</td>
-<td class="right">
-<input type="number" value="${x.real}" ${user.r!=="admin"?"disabled":""}
-onchange="chgReal(${x.id},this.value)">
-</td>
+<td>${x.recibido}</td>
+<td class="right">${x.real.toFixed(2)}</td>
 <td class="right">${dif.toFixed(2)}</td>
-<td>${x.user}</td>
-<td>${user.r==="admin"?`<button class="danger" onclick="del(${x.id})">X</button>`:""}</td>
+<td>${x.usuario}</td>
+<td>${usuario.r==="admin"?`<button class="danger" onclick="borrar(${x.id})">X</button>`:""}</td>
 </tr>`;
 });
 
 resumen.textContent=`Movimientos: ${l.length} · Pendiente: ${pendiente.toFixed(2)} €`;
 }
 
-function chgRec(id,v){const x=data.find(i=>i.id===id);x.rec=v;save()}
-function chgReal(id,v){const x=data.find(i=>i.id===id);x.real=+v||0;save()}
-function del(id){if(confirm("¿Borrar?")){data=data.filter(x=>x.id!==id);save()}}
-function save(){localStorage.setItem("efectivo",JSON.stringify(data));render()}
+function borrar(id){
+if(confirm("¿Borrar movimiento?")){
+datos=datos.filter(x=>x.id!==id);
+guardar();
+}
+}
+
+function guardar(){
+localStorage.setItem("efectivo",JSON.stringify(datos));
+render();
+}
 </script>
 </body>
 </html>
