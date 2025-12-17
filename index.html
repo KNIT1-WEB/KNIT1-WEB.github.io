@@ -5,22 +5,19 @@
 <title>Efectivo</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Firebase CDN -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
 <style>
 *{box-sizing:border-box;font-family:system-ui,sans-serif}
 body{margin:0;padding:20px;background:#e6e6e6}
 .app{max-width:1200px;margin:auto;background:#fff;padding:20px;border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,.15)}
-h1{margin-top:0}
+h1{margin:0}
 .section{margin-top:25px;padding:15px;background:#f4f4f4;border-radius:10px}
-form{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+form{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;align-items:end}
 label{font-weight:600;font-size:.85rem}
-input,select,textarea,button{padding:8px;border-radius:8px;border:1px solid #bbb}
+input,select,textarea,button{padding:8px;border-radius:8px;border:1px solid #bbb;font-size:.9rem}
+textarea{resize:vertical}
 button{background:#111;color:#fff;border:none;cursor:pointer}
-button.secondary{background:#666}
-button.danger{background:#c62828}
+button.gray{background:#666}
+button.red{background:#c62828}
 table{width:100%;border-collapse:collapse;margin-top:10px}
 th,td{padding:8px;border-bottom:1px solid #ddd;font-size:.9rem}
 th{background:#eee}
@@ -34,54 +31,68 @@ th{background:#eee}
 
 <body>
 
+<script>
+const USERS={
+ admin:{pass:"1234",rol:"admin"},
+ tienda1:{pass:"1111",rol:"tienda"},
+ tienda2:{pass:"2222",rol:"tienda"},
+ tienda3:{pass:"3333",rol:"tienda"}
+};
+</script>
+
+<!-- LOGIN -->
+<div id="login" style="position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center">
+  <div style="background:#fff;padding:20px;border-radius:14px;width:300px">
+    <h3>Acceso</h3>
+    <div id="err" style="color:red;display:none">Usuario o contraseña incorrectos</div>
+    <input id="lu" placeholder="Usuario">
+    <input id="lp" type="password" placeholder="Contraseña">
+    <button onclick="login()">Entrar</button>
+  </div>
+</div>
+
 <div class="app">
 <h1>Efectivo</h1>
-<p id="rolInfo"></p>
+<p>Usuario: <b id="u"></b></p>
 
-<!-- FORMULARIO -->
-<div class="section" id="formSection">
-<form id="form">
+<!-- ALTA (solo admin) -->
+<div class="section" id="alta">
+<form onsubmit="add(event)">
   <div>
     <label>Fecha</label>
-    <input type="date" id="fecha" required>
+    <input type="date" id="aFecha" required>
   </div>
   <div>
     <label>Importe anotado</label>
-    <input type="number" id="importe" step="0.01" required>
+    <input type="number" id="aImp" step="0.01" required>
   </div>
   <div>
     <label>Tienda</label>
-    <textarea id="tienda"></textarea>
+    <textarea id="aTienda"></textarea>
   </div>
-  <div>
-    <label>Recibido</label>
-    <select id="recibido">
-      <option>No</option>
-      <option>Sí</option>
-    </select>
-  </div>
-  <div>
-    <label>Importe recibido</label>
-    <input type="number" id="real" step="0.01">
-  </div>
-  <div>
-    <button>Añadir</button>
-  </div>
+  <div><button>Añadir</button></div>
 </form>
 </div>
 
 <!-- FILTROS -->
 <div class="section">
 <form>
-  <input id="fTienda" placeholder="Filtrar tienda">
-  <input type="date" id="fDesde">
-  <input type="date" id="fHasta">
-  <select id="fRec">
-    <option value="">Todos</option>
-    <option>No</option>
-    <option>Sí</option>
-  </select>
-  <button type="button" class="secondary" id="clear">Quitar filtros</button>
+  <div><label>Tienda</label><input id="fTienda"></div>
+  <div><label>Desde</label><input type="date" id="fDesde"></div>
+  <div><label>Hasta</label><input type="date" id="fHasta"></div>
+  <div>
+    <label>Recibido</label>
+    <select id="fRec">
+      <option value="">Todos</option>
+      <option>No</option>
+      <option>Sí</option>
+    </select>
+  </div>
+  <div>
+    <label>Creador</label>
+    <select id="fUser"></select>
+  </div>
+  <div><button type="button" class="gray" onclick="clearFilters()">Quitar filtros</button></div>
 </form>
 </div>
 
@@ -90,109 +101,109 @@ th{background:#eee}
 <table>
 <thead>
 <tr>
-<th>Fecha</th><th>Tienda</th><th>Importe</th>
-<th>Recibido</th><th>Real</th><th>Diferencia</th><th></th>
+<th>Fecha</th><th>Día</th><th class="right">Importe</th>
+<th>Tienda</th><th>Recibido</th><th class="right">Recibido €</th>
+<th class="right">Dif.</th><th>Usuario</th><th></th>
 </tr>
 </thead>
-<tbody id="tabla"></tbody>
+<tbody id="tb"></tbody>
 </table>
 </div>
 
 <script>
-/* ===== CONFIG ===== */
-const USERS={
- admin:"admin",
- tienda1:"tienda",
- tienda2:"tienda",
- tienda3:"tienda"
-};
-const USUARIO=prompt("Usuario (admin / tienda1 / tienda2 / tienda3)");
-const ROL=USERS[USUARIO]||"tienda";
+let actual=null,rol=null;
+let data=JSON.parse(localStorage.getItem("efectivo")||"[]");
 
-/* ===== FIREBASE ===== */
-firebase.initializeApp({
- apiKey:"AIzaSyDgFywPttkRgTTPS-arf7JZTo6cur7BbqM",
- authDomain:"efectivo-4234e.firebaseapp.com",
- projectId:"efectivo-4234e"
-});
-const db=firebase.firestore();
-
-/* ===== UI ===== */
-rolInfo.textContent=`Usuario: ${USUARIO} (${ROL})`;
-if(ROL!=="admin") formSection.style.display="none";
-
-/* ===== MIGRACIÓN ===== */
-if(!localStorage.getItem("migrado")){
- const old=JSON.parse(localStorage.getItem("efectivo")||"[]");
- old.forEach(o=>{
-  db.collection("movimientos").add({
-   fecha:o.fecha,
-   tienda:o.tienda,
-   importe:o.importe,
-   recibido:o.recibido,
-   real:o.real||0,
-   creadoPor:o.user,
-   creadoEn:firebase.firestore.FieldValue.serverTimestamp()
-  });
- });
- localStorage.setItem("migrado","1");
+function login(){
+ const u=lu.value,p=lp.value;
+ if(!USERS[u]||USERS[u].pass!==p){err.style.display="block";return;}
+ actual=u;rol=USERS[u].rol;
+ document.getElementById("login").style.display="none";
+ document.getElementById("u").textContent=u;
+ if(rol!=="admin") document.getElementById("alta").style.display="none";
+ fillUsers(); render();
 }
 
-/* ===== AÑADIR ===== */
-form.onsubmit=e=>{
+function add(e){
  e.preventDefault();
- db.collection("movimientos").add({
-  fecha:fecha.value,
-  tienda:tienda.value,
-  importe:+importe.value,
-  recibido:recibido.value,
-  real:+real.value||0,
-  creadoPor:USUARIO,
-  creadoEn:firebase.firestore.FieldValue.serverTimestamp()
+ data.push({
+  id: Date.now() + Math.random(),
+  fecha: aFecha.value,
+  importe: +aImp.value,
+  tienda: aTienda.value,
+  recibido: "No",
+  real: 0,
+  user: actual
  });
- form.reset();
-};
+ save(); e.target.reset(); render();
+}
 
-/* ===== LISTEN ===== */
-db.collection("movimientos").orderBy("fecha","desc")
-.onSnapshot(s=>{
- tabla.innerHTML="";
+function render(){
+ tb.innerHTML="";
+ let list=data.filter(x=>{
+  if(fTienda.value && !x.tienda.toLowerCase().includes(fTienda.value.toLowerCase()))return false;
+  if(fDesde.value && x.fecha<fDesde.value)return false;
+  if(fHasta.value && x.fecha>fHasta.value)return false;
+  if(fRec.value && x.recibido!==fRec.value)return false;
+  if(fUser.value && x.user!==fUser.value)return false;
+  return true;
+ }).sort((a,b)=>b.fecha.localeCompare(a.fecha));
+
  let pendiente=0;
- s.forEach(d=>{
-  const x=d.data();
-  if(fRec.value && x.recibido!==fRec.value) return;
-  if(fTienda.value && !x.tienda.toLowerCase().includes(fTienda.value.toLowerCase())) return;
+ list.forEach(x=>{
+  const dif=x.real-x.importe;
   if(x.recibido==="No") pendiente+=x.importe;
-  const dif=(x.real||0)-x.importe;
-  tabla.innerHTML+=`
+  tb.innerHTML+=`
 <tr>
 <td>${x.fecha}</td>
-<td>${x.tienda}</td>
+<td>${new Date(x.fecha).toLocaleDateString("es",{weekday:"short"})}</td>
 <td class="right">${x.importe.toFixed(2)}</td>
+<td>${x.tienda}</td>
 <td>
-${ROL==="admin"||ROL==="tienda"?`
-<select onchange="db.collection('movimientos').doc('${d.id}')
-.update({recibido:this.value,actualizadoPor:'${USUARIO}'})">
+${rol==="admin"||rol==="tienda"?`
+<select onchange="
+ const r=data.find(d=>d.id===${x.id});
+ r.recibido=this.value;
+ save();render();
+">
 <option ${x.recibido==="No"?"selected":""}>No</option>
 <option ${x.recibido==="Sí"?"selected":""}>Sí</option>
 </select>`:x.recibido}
 </td>
 <td>
-${ROL==="admin"||ROL==="tienda"?`
-<input type="number" value="${x.real||0}" step="0.01"
- onchange="db.collection('movimientos').doc('${d.id}')
- .update({real:+this.value,actualizadoPor:'${USUARIO}'})">`
-:(x.real||0).toFixed(2)}
+${rol==="admin"||rol==="tienda"?`
+<input type="number" step="0.01" value="${x.real}"
+ onchange="
+ const r=data.find(d=>d.id===${x.id});
+ r.real=+this.value||0;
+ save();render();
+">`
+:x.real.toFixed(2)}
 </td>
 <td class="right ${dif<0?'no':'ok'}">${dif.toFixed(2)}</td>
-<td>${ROL==="admin"?`<button class="danger"
- onclick="db.collection('movimientos').doc('${d.id}').delete()">X</button>`:""}</td>
+<td>${x.user}</td>
+<td>${rol==="admin"?`<button class="red" onclick="del(${x.id})">X</button>`:""}</td>
 </tr>`;
  });
- resumen.textContent=`Pendiente: ${pendiente.toFixed(2)} €`;
-});
+ resumen.textContent=`Movimientos: ${list.length} · Pendiente: ${pendiente.toFixed(2)} €`;
+}
 
-clear.onclick=()=>{fTienda.value=fDesde.value=fHasta.value=fRec.value="";};
+function del(id){
+ if(confirm("¿Borrar este movimiento?")){
+  data=data.filter(d=>d.id!==id);
+  save(); render();
+ }
+}
+
+function save(){localStorage.setItem("efectivo",JSON.stringify(data))}
+function fillUsers(){
+ fUser.innerHTML="<option value=''>Todos</option>";
+ Object.keys(USERS).forEach(u=>fUser.innerHTML+=`<option>${u}</option>`);
+}
+function clearFilters(){
+ fTienda.value=fDesde.value=fHasta.value=fRec.value=fUser.value="";
+ render();
+}
 </script>
 
 </body>
