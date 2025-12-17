@@ -5,151 +5,64 @@
 <title>Efectivo</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<!-- Firebase CDN -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
 <style>
-* { box-sizing: border-box; font-family: system-ui, sans-serif; }
-
-body {
-  margin: 0;
-  padding: 20px;
-  background: #e6e6e6;
-}
-
-.app {
-  max-width: 1200px;
-  margin: auto;
-  background: #fff;
-  padding: 20px;
-  border-radius: 14px;
-  box-shadow: 0 6px 18px rgba(0,0,0,.15);
-}
-
-h1 { margin-top: 0; }
-
-.section {
-  margin-top: 25px;
-  padding: 15px;
-  background: #f4f4f4;
-  border-radius: 10px;
-}
-
-form {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 12px;
-  align-items: end;
-}
-
-label { font-weight: 600; font-size: .85rem; }
-
-input, select, textarea, button {
-  padding: 8px;
-  border-radius: 8px;
-  border: 1px solid #bbb;
-  font-size: .9rem;
-}
-
-textarea { resize: vertical; }
-
-button {
-  background: #111;
-  color: #fff;
-  cursor: pointer;
-  border: none;
-}
-
-button.secondary { background: #666; }
-button.danger { background: #c62828; }
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-}
-
-th, td {
-  padding: 8px;
-  border-bottom: 1px solid #ddd;
-  font-size: .9rem;
-}
-
-th { background: #eee; }
-
-.right { text-align: right; }
-.ok { color: green; font-weight: 700; }
-.no { color: red; font-weight: 700; }
-
-#login {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-#loginBox {
-  background: #fff;
-  padding: 20px;
-  border-radius: 14px;
-  width: 300px;
-}
-
-@media(max-width:900px){
-  form { grid-template-columns: 1fr 1fr; }
-}
-@media(max-width:600px){
-  form { grid-template-columns: 1fr; }
-}
+*{box-sizing:border-box;font-family:system-ui,sans-serif}
+body{margin:0;padding:20px;background:#e6e6e6}
+.app{max-width:1200px;margin:auto;background:#fff;padding:20px;border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,.15)}
+h1{margin-top:0}
+.section{margin-top:25px;padding:15px;background:#f4f4f4;border-radius:10px}
+form{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+label{font-weight:600;font-size:.85rem}
+input,select,textarea,button{padding:8px;border-radius:8px;border:1px solid #bbb}
+button{background:#111;color:#fff;border:none;cursor:pointer}
+button.secondary{background:#666}
+button.danger{background:#c62828}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{padding:8px;border-bottom:1px solid #ddd;font-size:.9rem}
+th{background:#eee}
+.right{text-align:right}
+.ok{color:green;font-weight:700}
+.no{color:red;font-weight:700}
+@media(max-width:900px){form{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){form{grid-template-columns:1fr}}
 </style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
-<div id="login">
-  <div id="loginBox">
-    <h3>Acceso</h3>
-    <div id="loginError" style="color:red;display:none">Credenciales incorrectas</div>
-    <input id="loginUser" placeholder="Usuario">
-    <input id="loginPass" type="password" placeholder="Contraseña">
-    <button id="btnLogin">Entrar</button>
-  </div>
-</div>
-
 <div class="app">
 <h1>Efectivo</h1>
-<p>Registro de cobros por tienda</p>
-
-<p>
-Usuario actual: <b id="userLabel"></b>
-<button class="secondary" id="logout">Cambiar usuario</button>
-</p>
+<p id="rolInfo"></p>
 
 <!-- FORMULARIO -->
-<div class="section">
+<div class="section" id="formSection">
 <form id="form">
   <div>
     <label>Fecha</label>
-    <input type="date" id="fFecha" required>
+    <input type="date" id="fecha" required>
   </div>
   <div>
     <label>Importe anotado</label>
-    <input type="number" id="fImporte" step="0.01" required>
+    <input type="number" id="importe" step="0.01" required>
   </div>
   <div>
     <label>Tienda</label>
-    <textarea id="fTienda"></textarea>
+    <textarea id="tienda"></textarea>
   </div>
   <div>
     <label>Recibido</label>
-    <select id="fRecibido">
+    <select id="recibido">
       <option>No</option>
       <option>Sí</option>
     </select>
   </div>
   <div>
     <label>Importe recibido</label>
-    <input type="number" id="fReal" step="0.01">
+    <input type="number" id="real" step="0.01">
   </div>
   <div>
     <button>Añadir</button>
@@ -160,33 +73,15 @@ Usuario actual: <b id="userLabel"></b>
 <!-- FILTROS -->
 <div class="section">
 <form>
-  <div>
-    <label>Tienda</label>
-    <input id="fltTienda">
-  </div>
-  <div>
-    <label>Desde</label>
-    <input type="date" id="fltDesde">
-  </div>
-  <div>
-    <label>Hasta</label>
-    <input type="date" id="fltHasta">
-  </div>
-  <div>
-    <label>Recibido</label>
-    <select id="fltRec">
-      <option value="">Todos</option>
-      <option>Sí</option>
-      <option>No</option>
-    </select>
-  </div>
-  <div>
-    <label>Creador</label>
-    <select id="fltUser"></select>
-  </div>
-  <div>
-    <button type="button" class="secondary" id="clear">Quitar filtros</button>
-  </div>
+  <input id="fTienda" placeholder="Filtrar tienda">
+  <input type="date" id="fDesde">
+  <input type="date" id="fHasta">
+  <select id="fRec">
+    <option value="">Todos</option>
+    <option>No</option>
+    <option>Sí</option>
+  </select>
+  <button type="button" class="secondary" id="clear">Quitar filtros</button>
 </form>
 </div>
 
@@ -195,109 +90,109 @@ Usuario actual: <b id="userLabel"></b>
 <table>
 <thead>
 <tr>
-  <th>Fecha</th><th>Día</th><th class="right">Importe</th>
-  <th>Tienda</th><th>Recibido</th><th class="right">Real</th>
-  <th class="right">Dif.</th><th>Usuario</th><th></th>
+<th>Fecha</th><th>Tienda</th><th>Importe</th>
+<th>Recibido</th><th>Real</th><th>Diferencia</th><th></th>
 </tr>
 </thead>
 <tbody id="tabla"></tbody>
 </table>
-
 </div>
 
 <script>
-/* USUARIOS */
-const users=[
- {u:"admin",p:"1234"},
- {u:"tienda1",p:"1111"},
- {u:"tienda2",p:"2222"}
-];
-
-let actual=null;
-let data=JSON.parse(localStorage.getItem("efectivo")||"[]");
-
-/* LOGIN */
-btnLogin.onclick=()=>{
- const u=loginUser.value,p=loginPass.value;
- const ok=users.find(x=>x.u===u&&x.p===p);
- if(!ok){loginError.style.display="block";return;}
- actual=u; userLabel.textContent=u;
- login.style.display="none";
- fillUsers(); render();
+/* ===== CONFIG ===== */
+const USERS={
+ admin:"admin",
+ tienda1:"tienda",
+ tienda2:"tienda",
+ tienda3:"tienda"
 };
+const USUARIO=prompt("Usuario (admin / tienda1 / tienda2 / tienda3)");
+const ROL=USERS[USUARIO]||"tienda";
 
-/* LOGOUT */
-logout.onclick=()=>location.reload();
+/* ===== FIREBASE ===== */
+firebase.initializeApp({
+ apiKey:"AIzaSyDgFywPttkRgTTPS-arf7JZTo6cur7BbqM",
+ authDomain:"efectivo-4234e.firebaseapp.com",
+ projectId:"efectivo-4234e"
+});
+const db=firebase.firestore();
 
-/* AÑADIR */
+/* ===== UI ===== */
+rolInfo.textContent=`Usuario: ${USUARIO} (${ROL})`;
+if(ROL!=="admin") formSection.style.display="none";
+
+/* ===== MIGRACIÓN ===== */
+if(!localStorage.getItem("migrado")){
+ const old=JSON.parse(localStorage.getItem("efectivo")||"[]");
+ old.forEach(o=>{
+  db.collection("movimientos").add({
+   fecha:o.fecha,
+   tienda:o.tienda,
+   importe:o.importe,
+   recibido:o.recibido,
+   real:o.real||0,
+   creadoPor:o.user,
+   creadoEn:firebase.firestore.FieldValue.serverTimestamp()
+  });
+ });
+ localStorage.setItem("migrado","1");
+}
+
+/* ===== AÑADIR ===== */
 form.onsubmit=e=>{
  e.preventDefault();
- data.push({
-  fecha:fFecha.value,
-  importe:+fImporte.value,
-  tienda:fTienda.value,
-  recibido:fRecibido.value,
-  real:+(fReal.value||0),
-  user:actual
+ db.collection("movimientos").add({
+  fecha:fecha.value,
+  tienda:tienda.value,
+  importe:+importe.value,
+  recibido:recibido.value,
+  real:+real.value||0,
+  creadoPor:USUARIO,
+  creadoEn:firebase.firestore.FieldValue.serverTimestamp()
  });
- save(); form.reset(); render();
+ form.reset();
 };
 
-/* FILTROS */
-document.querySelectorAll("#fltTienda,#fltDesde,#fltHasta,#fltRec,#fltUser")
-.forEach(e=>e.oninput=render);
-
-clear.onclick=()=>{
- fltTienda.value=fltDesde.value=fltHasta.value=fltRec.value=fltUser.value="";
- render();
-};
-
-/* RENDER */
-function render(){
+/* ===== LISTEN ===== */
+db.collection("movimientos").orderBy("fecha","desc")
+.onSnapshot(s=>{
  tabla.innerHTML="";
- let list=data.filter(x=>{
-  if(fltTienda.value && !x.tienda.toLowerCase().includes(fltTienda.value.toLowerCase()))return false;
-  if(fltDesde.value && x.fecha<fltDesde.value)return false;
-  if(fltHasta.value && x.fecha>fltHasta.value)return false;
-  if(fltRec.value && x.recibido!==fltRec.value)return false;
-  if(fltUser.value && x.user!==fltUser.value)return false;
-  return true;
- }).sort((a,b)=>b.fecha.localeCompare(a.fecha));
-
  let pendiente=0;
- list.forEach((x,i)=>{
-  const dif=(x.real||0)-x.importe;
+ s.forEach(d=>{
+  const x=d.data();
+  if(fRec.value && x.recibido!==fRec.value) return;
+  if(fTienda.value && !x.tienda.toLowerCase().includes(fTienda.value.toLowerCase())) return;
   if(x.recibido==="No") pendiente+=x.importe;
+  const dif=(x.real||0)-x.importe;
   tabla.innerHTML+=`
 <tr>
 <td>${x.fecha}</td>
-<td>${new Date(x.fecha).toLocaleDateString("es",{weekday:"short"})}</td>
-<td class="right">${x.importe.toFixed(2)}</td>
 <td>${x.tienda}</td>
-<td class="${x.recibido==="Sí"?"ok":"no"}">${x.recibido}</td>
-<td class="right">${(x.real||0).toFixed(2)}</td>
-<td class="right" style="color:${dif? "red":"green"}">${dif.toFixed(2)}</td>
-<td>${x.user}</td>
-<td><button class="danger" onclick="del(${i})">X</button></td>
+<td class="right">${x.importe.toFixed(2)}</td>
+<td>
+${ROL==="admin"||ROL==="tienda"?`
+<select onchange="db.collection('movimientos').doc('${d.id}')
+.update({recibido:this.value,actualizadoPor:'${USUARIO}'})">
+<option ${x.recibido==="No"?"selected":""}>No</option>
+<option ${x.recibido==="Sí"?"selected":""}>Sí</option>
+</select>`:x.recibido}
+</td>
+<td>
+${ROL==="admin"||ROL==="tienda"?`
+<input type="number" value="${x.real||0}" step="0.01"
+ onchange="db.collection('movimientos').doc('${d.id}')
+ .update({real:+this.value,actualizadoPor:'${USUARIO}'})">`
+:(x.real||0).toFixed(2)}
+</td>
+<td class="right ${dif<0?'no':'ok'}">${dif.toFixed(2)}</td>
+<td>${ROL==="admin"?`<button class="danger"
+ onclick="db.collection('movimientos').doc('${d.id}').delete()">X</button>`:""}</td>
 </tr>`;
  });
+ resumen.textContent=`Pendiente: ${pendiente.toFixed(2)} €`;
+});
 
- resumen.textContent=`Movimientos: ${list.length} · Pendiente: ${pendiente.toFixed(2)} €`;
-}
-
-/* BORRAR */
-function del(i){
- if(confirm("¿Borrar?")){
-  data.splice(i,1); save(); render();
- }
-}
-
-function save(){localStorage.setItem("efectivo",JSON.stringify(data));}
-
-function fillUsers(){
- fltUser.innerHTML="<option value=''>Todos</option>";
- users.forEach(u=>fltUser.innerHTML+=`<option>${u.u}</option>`);
-}
+clear.onclick=()=>{fTienda.value=fDesde.value=fHasta.value=fRec.value="";};
 </script>
 
 </body>
