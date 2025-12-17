@@ -1,1 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Efectivo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
+<style>
+body{font-family:system-ui;background:#e6e6e6;margin:0;padding:20px}
+.card{max-width:1200px;margin:auto;background:#fff;padding:20px;border-radius:14px}
+h1{margin-top:0}
+.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+input,select,textarea,button{padding:8px;border-radius:8px;border:1px solid #bbb}
+button{background:#222;color:#fff;border:none;cursor:pointer}
+button.gray{background:#666}
+table{width:100%;border-collapse:collapse;margin-top:20px}
+th,td{padding:8px;border-bottom:1px solid #eee;text-align:left}
+th{background:#f2f2f2}
+.red{color:#c62828;font-weight:700}
+.green{color:#0a7d0a;font-weight:700}
+.filters{margin-top:30px;padding:15px;background:#f7f7f7;border-radius:12px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+<h1>Efectivo</h1>
+<p>Registro de cobros por tienda</p>
+
+<div id="login">
+  <input id="user" placeholder="Usuario">
+  <input id="pass" type="password" placeholder="Contraseña">
+  <button onclick="login()">Entrar</button>
+</div>
+
+<div id="app" style="display:none">
+
+<p>Usuario actual: <b id="usuarioActual"></b>
+<button class="gray" onclick="logout()">Cambiar usuario</button></p>
+
+<div class="grid">
+  <input id="fecha" type="date">
+  <input id="importe" type="number" placeholder="Importe anotado">
+  <textarea id="tienda" placeholder="Tienda"></textarea>
+  <select id="recibido">
+    <option>No</option>
+    <option>Sí</option>
+  </select>
+  <input id="real" type="number" placeholder="Importe recibido">
+  <button onclick="add()">Añadir</button>
+</div>
+
+<div class="filters">
+  <div class="grid">
+    <input id="fTienda" placeholder="Filtrar tienda">
+    <input id="fDesde" type="date">
+    <input id="fHasta" type="date">
+    <select id="fRec">
+      <option value="">Todos</option>
+      <option>No</option>
+      <option>Sí</option>
+    </select>
+    <button class="gray" onclick="clearFilters()">Quitar filtros</button>
+  </div>
+</div>
+
+<p id="resumen"></p>
+
+<table>
+<thead>
+<tr>
+<th>Fecha</th><th>Tienda</th><th>Anotado</th>
+<th>Recibido</th><th>Real</th><th>Diferencia</th><th></th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
+
+</div>
+</div>
+
+<script>
+const USERS={admin:"1234",tienda1:"1111",tienda2:"2222"}
+let current=null
+let data=JSON.parse(localStorage.getItem("efectivo")||"[]")
+
+function login(){
+  const u=user.value,p=pass.value
+  if(USERS[u]!==p) return alert("Incorrecto")
+  current=u
+  usuarioActual.textContent=u
+  login.style.display="none"
+  app.style.display="block"
+  render()
+}
+
+function logout(){
+  current=null
+  app.style.display="none"
+  login.style.display="block"
+}
+
+function add(){
+  if(!fecha.value||!importe.value) return alert("Faltan datos")
+  data.push({
+    fecha:fecha.value,
+    tienda:tienda.value,
+    importe:+importe.value,
+    recibido:recibido.value,
+    real:+real.value||0,
+    user:current
+  })
+  save()
+  render()
+}
+
+function save(){
+  localStorage.setItem("efectivo",JSON.stringify(data))
+}
+
+function render(){
+  tbody.innerHTML=""
+  let list=data.filter(d=>{
+    if(fTienda.value && !d.tienda.toLowerCase().includes(fTienda.value.toLowerCase())) return false
+    if(fDesde.value && d.fecha<fDesde.value) return false
+    if(fHasta.value && d.fecha>fHasta.value) return false
+    if(fRec.value && d.recibido!==fRec.value) return false
+    return true
+  })
+
+  let pendiente=0
+  list.forEach((d,i)=>{
+    const dif=d.real-d.importe
+    if(d.recibido==="No") pendiente+=d.importe
+    tbody.innerHTML+=`
+    <tr>
+      <td>${d.fecha}</td>
+      <td>${d.tienda}</td>
+      <td>${d.importe}</td>
+      <td>
+        <select onchange="update(${i},'recibido',this.value)">
+          <option ${d.recibido==="No"?"selected":""}>No</option>
+          <option ${d.recibido==="Sí"?"selected":""}>Sí</option>
+        </select>
+      </td>
+      <td><input type="number" value="${d.real}" onchange="update(${i},'real',this.value)"></td>
+      <td class="${dif<0?'red':'green'}">${dif.toFixed(2)}</td>
+      <td><button onclick="del(${i})">X</button></td>
+    </tr>`
+  })
+  resumen.textContent=`Movimientos: ${list.length} · Pendiente: ${pendiente.toFixed(2)} €`
+}
+
+function update(i,k,v){data[i][k]=k==="real"?+v:v;save();render()}
+function del(i){if(confirm("Borrar?")){data.splice(i,1);save();render()}}
+function clearFilters(){fTienda.value=fDesde.value=fHasta.value=fRec.value="";render()}
+
+document.querySelectorAll("input,select").forEach(e=>e.addEventListener("input",render))
+</script>
+
+</body>
+</html>
