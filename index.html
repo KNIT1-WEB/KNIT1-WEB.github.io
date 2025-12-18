@@ -1,1 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Efectivo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<style>
+* { box-sizing: border-box; font-family: system-ui, sans-serif; }
+body { margin:0; background:#eee; padding:1rem; }
+.app { max-width:1100px; margin:auto; background:#fff; padding:1.5rem; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.1); }
+h1 { margin-top:0; }
+
+.row { display:flex; gap:1rem; flex-wrap:wrap; align-items:end; }
+.row > div { flex:1; min-width:140px; }
+
+input, select, button {
+  width:100%;
+  padding:.5rem;
+  font-size:1rem;
+}
+
+button {
+  background:#333;
+  color:#fff;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+}
+button.secondary {
+  background:#777;
+}
+
+table {
+  width:100%;
+  border-collapse:collapse;
+  margin-top:1rem;
+}
+th, td {
+  padding:.5rem;
+  border-bottom:1px solid #ddd;
+  text-align:left;
+}
+th { background:#f3f3f3; }
+
+.login {
+  max-width:400px;
+  margin:3rem auto;
+  background:#fff;
+  padding:2rem;
+  border-radius:12px;
+  box-shadow:0 10px 30px rgba(0,0,0,.1);
+}
+.hidden { display:none; }
+
+@media(max-width:600px){
+  .row { flex-direction:column; }
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="login" class="login">
+  <h2>Acceso</h2>
+  <label>Usuario</label>
+  <input id="loginUser">
+  <label>Contraseña</label>
+  <input id="loginPass" type="password">
+  <button onclick="login()">Entrar</button>
+  <p id="loginError" style="color:red"></p>
+</div>
+
+<!-- APP -->
+<div id="app" class="app hidden">
+  <h1>Efectivo</h1>
+  <p>Usuario actual: <b id="userName"></b>
+     <button class="secondary" onclick="logout()">Cambiar usuario</button>
+  </p>
+
+  <h3>Nuevo movimiento</h3>
+  <div class="row">
+    <div>
+      <label>Fecha</label>
+      <input id="fecha" type="date">
+    </div>
+    <div>
+      <label>Importe anotado (€)</label>
+      <input id="importe" type="number" step="0.01">
+    </div>
+    <div>
+      <label>Tienda</label>
+      <input id="tienda">
+    </div>
+    <div>
+      <label>Recibido</label>
+      <select id="recibido">
+        <option>No</option>
+        <option>Sí</option>
+      </select>
+    </div>
+    <div>
+      <label>Importe recibido (€)</label>
+      <input id="real" type="number" step="0.01">
+    </div>
+    <div>
+      <button onclick="addMovimiento()">Añadir</button>
+    </div>
+  </div>
+
+  <h3>Movimientos</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Importe</th>
+        <th>Tienda</th>
+        <th>Recibido</th>
+        <th>Real</th>
+        <th>Usuario</th>
+      </tr>
+    </thead>
+    <tbody id="tabla"></tbody>
+  </table>
+</div>
+
+<script>
+const usuarios = [
+  {u:"admin", p:"1234", role:"admin"},
+  {u:"tienda1", p:"1111", role:"tienda"},
+  {u:"tienda2", p:"2222", role:"tienda"}
+];
+
+let actual = null;
+let movimientos = JSON.parse(localStorage.getItem("movs")||"[]");
+
+function login(){
+  const u = loginUser.value;
+  const p = loginPass.value;
+  const ok = usuarios.find(x=>x.u===u && x.p===p);
+  if(!ok){
+    loginError.textContent="Usuario o contraseña incorrectos";
+    return;
+  }
+  actual = ok;
+  login.classList.add("hidden");
+  app.classList.remove("hidden");
+  userName.textContent = actual.u;
+  render();
+}
+
+function logout(){
+  actual = null;
+  app.classList.add("hidden");
+  login.classList.remove("hidden");
+}
+
+function addMovimiento(){
+  if(!fecha.value || !importe.value || !tienda.value){
+    alert("Completa fecha, importe y tienda");
+    return;
+  }
+  movimientos.push({
+    fecha:fecha.value,
+    importe:parseFloat(importe.value),
+    tienda:tienda.value,
+    recibido:recibido.value,
+    real:real.value||"",
+    usuario:actual.u
+  });
+  localStorage.setItem("movs",JSON.stringify(movimientos));
+  fecha.value=importe.value=tienda.value=real.value="";
+  recibido.value="No";
+  render();
+}
+
+function render(){
+  tabla.innerHTML="";
+  movimientos.forEach(m=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
+      <td>${m.fecha}</td>
+      <td>${m.importe}</td>
+      <td>${m.tienda}</td>
+      <td>${m.recibido}</td>
+      <td>${m.real}</td>
+      <td>${m.usuario}</td>
+    `;
+    tabla.appendChild(tr);
+  });
+}
+</script>
+
+</body>
+</html>
