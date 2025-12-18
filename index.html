@@ -1,1 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Efectivo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<style>
+*{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+body{margin:0;padding:1rem;background:#e6e6e6}
+.app{max-width:1100px;margin:auto;background:#fff;padding:1.5rem;border-radius:14px;box-shadow:0 4px 16px rgba(0,0,0,.12)}
+h1{margin:.2rem 0}
+.subtitle{color:#555;margin-bottom:1rem}
+.row{display:grid;grid-template-columns:repeat(6,1fr);gap:1rem;margin-bottom:1rem}
+.row.filters{margin-top:2rem;padding-top:1.5rem;border-top:1px solid #ddd}
+label{font-size:.85rem;font-weight:600}
+input,select,textarea{width:100%;padding:.55rem;border-radius:8px;border:1px solid #bbb}
+textarea{resize:vertical;min-height:40px}
+button{border:none;border-radius:8px;padding:.6rem 1rem;cursor:pointer}
+.btn{background:#222;color:#fff}
+.btn.gray{background:#666}
+.btn.red{background:#c62828;color:#fff}
+table{width:100%;border-collapse:collapse;margin-top:1rem}
+th,td{padding:.6rem;border-bottom:1px solid #eee;font-size:.9rem}
+th{background:#f2f2f2}
+tr:nth-child(even){background:#fafafa}
+.text-right{text-align:right}
+.estado-si{color:#0a7d0a;font-weight:700}
+.estado-no{color:#c62828;font-weight:700}
+
+#login{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center}
+#loginBox{background:#fff;padding:1.5rem;border-radius:12px;width:320px}
+#loginBox input{margin-bottom:.6rem}
+
+@media(max-width:900px){.row{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.row{grid-template-columns:1fr}}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div id="loginBox">
+    <h2>Acceso</h2>
+    <input id="loginUser" placeholder="Usuario">
+    <input id="loginPass" type="password" placeholder="Contraseña">
+    <button class="btn" id="btnLogin" style="width:100%">Entrar</button>
+    <p id="loginError" style="color:#c62828;display:none">Credenciales incorrectas</p>
+  </div>
+</div>
+
+<div class="app">
+  <h1>Efectivo</h1>
+  <div class="subtitle">Registro de cobros por tienda</div>
+
+  <div style="margin-bottom:1rem">
+    Usuario actual: <b id="usuarioActual"></b>
+    <button class="btn gray" id="btnLogout">Cambiar usuario</button>
+  </div>
+
+  <!-- ALTA -->
+  <form id="formAlta" class="row">
+    <div>
+      <label>Fecha</label>
+      <input type="date" id="aFecha" required>
+    </div>
+    <div>
+      <label>Importe anotado</label>
+      <input type="number" id="aImporte" step="0.01">
+    </div>
+    <div>
+      <label>Tienda</label>
+      <textarea id="aTienda" required></textarea>
+    </div>
+    <div>
+      <label>Recibido</label>
+      <select id="aRecibido">
+        <option>No</option>
+        <option>Sí</option>
+      </select>
+    </div>
+    <div>
+      <label>Importe real</label>
+      <input type="number" id="aReal" step="0.01">
+    </div>
+    <div style="display:flex;align-items:end">
+      <button class="btn" style="width:100%">Añadir</button>
+    </div>
+  </form>
+
+  <!-- FILTROS -->
+  <div class="row filters">
+    <div>
+      <label>Tienda</label>
+      <input id="fTienda">
+    </div>
+    <div>
+      <label>Desde</label>
+      <input type="date" id="fDesde">
+    </div>
+    <div>
+      <label>Hasta</label>
+      <input type="date" id="fHasta">
+    </div>
+    <div>
+      <label>Recibido</label>
+      <select id="fRec">
+        <option value="">Todos</option>
+        <option>Sí</option>
+        <option>No</option>
+      </select>
+    </div>
+    <div>
+      <label>Creador</label>
+      <select id="fUser"></select>
+    </div>
+    <div style="display:flex;align-items:end">
+      <button type="button" class="btn gray" id="btnClear">Quitar filtros</button>
+    </div>
+  </div>
+
+  <div id="resumen" style="margin-top:1rem;font-weight:600"></div>
+
+  <!-- TABLA -->
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha</th><th>Día</th><th>Importe</th><th>Tienda</th>
+        <th>Recibido</th><th>Real</th><th>Usuario</th><th></th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<script>
+/* ===== USUARIOS ===== */
+const USERS=[
+  {u:"admin",p:"1234",role:"admin"},
+  {u:"tienda1",p:"1111",role:"tienda"},
+  {u:"tienda2",p:"2222",role:"tienda"},
+  {u:"tienda3",p:"3333",role:"tienda"}
+];
+
+let user=null;
+let data=JSON.parse(localStorage.getItem("efectivo_data")||"[]");
+
+/* ===== LOGIN ===== */
+btnLogin.onclick=()=>{
+  const u=loginUser.value.trim();
+  const p=loginPass.value.trim();
+  const found=USERS.find(x=>x.u===u&&x.p===p);
+  if(!found){loginError.style.display="block";return;}
+  user=found;
+  usuarioActual.textContent=user.u;
+  login.style.display="none";
+  loadUserFilter();
+  render();
+};
+btnLogout.onclick=()=>location.reload();
+
+/* ===== ALTA ===== */
+formAlta.onsubmit=e=>{
+  e.preventDefault();
+  data.push({
+    id:Date.now(),
+    fecha:aFecha.value,
+    importe:+aImporte.value||0,
+    tienda:aTienda.value,
+    recibido:aRecibido.value,
+    real:+aReal.value||0,
+    user:user.u
+  });
+  save();
+  formAlta.reset();
+  render();
+};
+
+/* ===== FILTROS ===== */
+btnClear.onclick=()=>{
+  fTienda.value=fDesde.value=fHasta.value=fRec.value=fUser.value="";
+  render();
+};
+["fTienda","fDesde","fHasta","fRec","fUser"].forEach(id=>{
+  document.getElementById(id).addEventListener("input",render);
+});
+
+/* ===== RENDER ===== */
+function render(){
+  tbody.innerHTML="";
+  let list=data.filter(x=>{
+    if(fTienda.value && !x.tienda.toLowerCase().includes(fTienda.value.toLowerCase()))return false;
+    if(fDesde.value && x.fecha<fDesde.value)return false;
+    if(fHasta.value && x.fecha>fHasta.value)return false;
+    if(fRec.value && x.recibido!==fRec.value)return false;
+    if(fUser.value && x.user!==fUser.value)return false;
+    return true;
+  });
+
+  let pendiente=0;
+  list.forEach(x=>{
+    if(x.recibido==="No")pendiente+=x.importe;
+    const tr=document.createElement("tr");
+    const dia=new Date(x.fecha).toLocaleDateString("es-ES",{weekday:"long"});
+    tr.innerHTML=`
+      <td>${x.fecha}</td>
+      <td>${dia}</td>
+      <td class="text-right">${x.importe.toFixed(2)}</td>
+      <td>${x.tienda}</td>
+      <td class="${x.recibido==="Sí"?"estado-si":"estado-no"}">${x.recibido}</td>
+      <td class="text-right">${x.real.toFixed(2)}</td>
+      <td>${x.user}</td>
+      <td>${user.role==="admin"?`<button class="btn red" onclick="del(${x.id})">X</button>`:""}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  resumen.textContent=`Movimientos: ${list.length} · Pendiente: ${pendiente.toFixed(2)} €`;
+}
+
+function del(id){
+  if(!confirm("¿Borrar?"))return;
+  data=data.filter(x=>x.id!==id);
+  save();render();
+}
+function save(){localStorage.setItem("efectivo_data",JSON.stringify(data));}
+
+function loadUserFilter(){
+  fUser.innerHTML="<option value=''>Todos</option>";
+  USERS.forEach(u=>{
+    const o=document.createElement("option");
+    o.value=o.textContent=u.u;
+    fUser.appendChild(o);
+  });
+}
+</script>
+</body>
+</html>
