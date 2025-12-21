@@ -1,1 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Efectivo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<style>
+body{
+  margin:0;
+  font-family:system-ui, sans-serif;
+  background:#e6e6e6;
+}
+.app{
+  max-width:1100px;
+  margin:auto;
+  background:#fff;
+  padding:20px;
+  border-radius:12px;
+}
+h1{margin-top:0}
+input, select, button{
+  padding:8px;
+  font-size:14px;
+}
+button{
+  cursor:pointer;
+}
+.row{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:10px;
+  margin-bottom:15px;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:20px;
+}
+th,td{
+  border-bottom:1px solid #ddd;
+  padding:8px;
+  text-align:left;
+}
+th{
+  background:#f2f2f2;
+}
+.hidden{display:none}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<!-- LOGIN -->
+<div id="loginBox">
+  <h1>Efectivo</h1>
+  <p>Acceso</p>
+  <input id="loginUser" placeholder="Usuario">
+  <input id="loginPass" type="password" placeholder="Contraseña">
+  <br><br>
+  <button id="btnLogin">Entrar</button>
+  <p id="loginError" style="color:red"></p>
+</div>
+
+<!-- APP -->
+<div id="appBox" class="hidden">
+  <h1>Efectivo</h1>
+  <p>Usuario actual: <b id="userName"></b>
+    <button id="btnLogout">Salir</button>
+  </p>
+
+  <!-- ALTA MOVIMIENTO -->
+  <div id="altaBox">
+    <h3>Nuevo movimiento</h3>
+    <div class="row">
+      <input type="date" id="fecha">
+      <input type="number" id="importe" placeholder="Importe">
+      <input id="tienda" placeholder="Tienda">
+      <select id="recibido">
+        <option value="No">No</option>
+        <option value="Sí">Sí</option>
+      </select>
+      <input type="number" id="importeReal" placeholder="Importe recibido">
+      <button id="btnAdd">Añadir</button>
+    </div>
+  </div>
+
+  <!-- TABLA -->
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Importe</th>
+        <th>Tienda</th>
+        <th>Recibido</th>
+        <th>Importe real</th>
+        <th>Creado por</th>
+      </tr>
+    </thead>
+    <tbody id="tabla"></tbody>
+  </table>
+</div>
+
+</div>
+
+<script>
+// ================= USUARIOS =================
+const usuarios = {
+  admin: "1234",
+  tienda1: "1111",
+  tienda2: "2222"
+};
+
+let usuarioActual = null;
+let datos = JSON.parse(localStorage.getItem("movimientos")) || [];
+
+// ================= LOGIN =================
+document.getElementById("btnLogin").onclick = () => {
+  const u = loginUser.value.trim();
+  const p = loginPass.value.trim();
+  if (usuarios[u] && usuarios[u] === p) {
+    usuarioActual = u;
+    loginBox.classList.add("hidden");
+    appBox.classList.remove("hidden");
+    userName.textContent = u;
+    if (u !== "admin") altaBox.style.display = "none";
+    pintarTabla();
+  } else {
+    loginError.textContent = "Usuario o contraseña incorrectos";
+  }
+};
+
+btnLogout.onclick = () => {
+  location.reload();
+};
+
+// ================= AÑADIR =================
+btnAdd.onclick = () => {
+  const mov = {
+    fecha: fecha.value,
+    importe: importe.value || "",
+    tienda: tienda.value || "",
+    recibido: recibido.value,
+    importeReal: importeReal.value || "",
+    creador: usuarioActual
+  };
+  datos.push(mov);
+  localStorage.setItem("movimientos", JSON.stringify(datos));
+  limpiarAlta();
+  pintarTabla();
+};
+
+function limpiarAlta(){
+  fecha.value="";
+  importe.value="";
+  tienda.value="";
+  recibido.value="No";
+  importeReal.value="";
+}
+
+// ================= TABLA =================
+function pintarTabla(){
+  tabla.innerHTML="";
+  datos.forEach(m=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
+      <td>${m.fecha}</td>
+      <td>${m.importe}</td>
+      <td>${m.tienda}</td>
+      <td>${m.recibido}</td>
+      <td>${m.importeReal}</td>
+      <td>${m.creador}</td>
+    `;
+    tabla.appendChild(tr);
+  });
+}
+</script>
+</body>
+</html>
