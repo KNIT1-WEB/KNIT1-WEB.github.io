@@ -1,1 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Efectivo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<style>
+body { font-family: system-ui, sans-serif; background:#eee; padding:20px }
+.card { background:#fff; padding:20px; border-radius:10px; max-width:1100px; margin:auto }
+h1 { margin-top:0 }
+input, select, button { padding:8px; margin:5px 0; width:100% }
+.row { display:grid; grid-template-columns: repeat(6,1fr); gap:10px; align-items:center }
+table { width:100%; border-collapse:collapse; margin-top:20px }
+th, td { border-bottom:1px solid #ccc; padding:8px; text-align:center }
+.red { color:red; font-weight:bold }
+button { cursor:pointer }
+.hidden { display:none }
+</style>
+</head>
+
+<body>
+
+<div class="card" id="loginBox">
+  <h1>Efectivo</h1>
+  <input id="loginUser" placeholder="Usuario">
+  <input id="loginPass" type="password" placeholder="Contraseña">
+  <button onclick="login()">Entrar</button>
+</div>
+
+<div class="card hidden" id="app">
+  <h1>Efectivo</h1>
+  <p>Usuario actual: <b id="userName"></b> <button onclick="logout()">Salir</button></p>
+
+  <div class="row">
+    <input type="date" id="fecha">
+    <input type="number" id="importe" placeholder="Importe anotado">
+    <input id="tienda" placeholder="Tienda">
+    <select id="recibido">
+      <option>No</option>
+      <option>Si</option>
+    </select>
+    <input type="number" id="real" placeholder="Importe recibido">
+    <button onclick="add()">Añadir</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Tienda</th>
+        <th>Anotado</th>
+        <th>Recibido</th>
+        <th>Real</th>
+        <th>Diferencia</th>
+      </tr>
+    </thead>
+    <tbody id="tabla"></tbody>
+  </table>
+</div>
+
+<script>
+let usuario = null
+let datos = JSON.parse(localStorage.getItem("efectivo") || "[]")
+
+function login(){
+  const u = loginUser.value.trim()
+  const p = loginPass.value.trim()
+  if ((u==="admin" && p==="admin") || (u==="tienda" && p==="tienda")){
+    usuario=u
+    loginBox.classList.add("hidden")
+    app.classList.remove("hidden")
+    userName.textContent=u
+    pintar()
+  } else alert("Credenciales incorrectas")
+}
+
+function logout(){
+  usuario=null
+  app.classList.add("hidden")
+  loginBox.classList.remove("hidden")
+}
+
+function add(){
+  if(!fecha.value || !importe.value || !tienda.value) return alert("Faltan datos")
+  datos.push({
+    fecha:fecha.value,
+    tienda:tienda.value,
+    importe:+importe.value,
+    recibido:recibido.value,
+    real:+real.value||0
+  })
+  localStorage.setItem("efectivo",JSON.stringify(datos))
+  fecha.value=importe.value=tienda.value=real.value=""
+  recibido.value="No"
+  pintar()
+}
+
+function pintar(){
+  tabla.innerHTML=""
+  datos.forEach(d=>{
+    const dif = (d.real - d.importe).toFixed(2)
+    tabla.innerHTML+=`
+      <tr>
+        <td>${d.fecha}</td>
+        <td>${d.tienda}</td>
+        <td>${d.importe.toFixed(2)}</td>
+        <td>
+          <select onchange="d.recibido=this.value;save()">
+            <option ${d.recibido=="No"?"selected":""}>No</option>
+            <option ${d.recibido=="Si"?"selected":""}>Si</option>
+          </select>
+        </td>
+        <td>
+          <input type="number" value="${d.real}" onchange="d.real=+this.value;save()">
+        </td>
+        <td class="${dif!=0?'red':''}">${dif}</td>
+      </tr>`
+  })
+}
+
+function save(){
+  localStorage.setItem("efectivo",JSON.stringify(datos))
+  pintar()
+}
+</script>
+
+</body>
+</html>
